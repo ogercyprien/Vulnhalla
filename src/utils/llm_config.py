@@ -100,82 +100,53 @@ def load_llm_config() -> Dict[str, Any]:
     
     if provider == "openai":
         api_key = os.getenv("OPENAI_API_KEY")
-        if not api_key:
-            raise ValueError("OPENAI_API_KEY not found in environment variables or .env file")
     
     elif provider == "azure":
         api_key = os.getenv("AZURE_OPENAI_API_KEY") or os.getenv("AZURE_API_KEY")
         endpoint = os.getenv("AZURE_OPENAI_ENDPOINT") or os.getenv("AZURE_API_BASE")
         api_version = os.getenv("AZURE_OPENAI_API_VERSION") or os.getenv("AZURE_API_VERSION", "2024-08-01-preview")
-        
-        if not api_key:
-            raise ValueError("AZURE_OPENAI_API_KEY or AZURE_API_KEY not found in environment variables or .env file")
-        if not endpoint:
-            raise ValueError("AZURE_OPENAI_ENDPOINT or AZURE_API_BASE not found in environment variables or .env file")
     
     elif provider == "anthropic":
         api_key = os.getenv("ANTHROPIC_API_KEY")
-        if not api_key:
-            raise ValueError("ANTHROPIC_API_KEY not found in environment variables or .env file")
     
     elif provider == "gemini":
         api_key = os.getenv("GOOGLE_API_KEY")
-        if not api_key:
-            raise ValueError("GOOGLE_API_KEY not found in environment variables or .env file")
     
     elif provider == "mistral":
         api_key = os.getenv("MISTRAL_API_KEY")
-        if not api_key:
-            raise ValueError("MISTRAL_API_KEY not found in environment variables or .env file")
     
     elif provider == "codestral":
         # Codestral uses Mistral API key
         api_key = os.getenv("MISTRAL_API_KEY")
-        if not api_key:
-            raise ValueError("MISTRAL_API_KEY not found in environment variables or .env file (Codestral uses Mistral API key)")
     
     elif provider == "groq":
         api_key = os.getenv("GROQ_API_KEY")
-        if not api_key:
-            raise ValueError("GROQ_API_KEY not found in environment variables or .env file")
     
     elif provider == "openrouter":
         api_key = os.getenv("OPENROUTER_API_KEY")
-        if not api_key:
-            raise ValueError("OPENROUTER_API_KEY not found in environment variables or .env file")
     
     elif provider == "huggingface":
         api_key = os.getenv("HUGGINGFACE_API_KEY")
-        if not api_key:
-            raise ValueError("HUGGINGFACE_API_KEY not found in environment variables or .env file")
     
     elif provider == "cohere":
         api_key = os.getenv("COHERE_API_KEY") or os.getenv("CO_API_KEY")
-        if not api_key:
-            raise ValueError("COHERE_API_KEY or CO_API_KEY not found in environment variables or .env file")
     
     elif provider == "bedrock":
         # Bedrock uses AWS credentials
         api_key = os.getenv("AWS_ACCESS_KEY_ID")
         aws_secret = os.getenv("AWS_SECRET_ACCESS_KEY")
         aws_region = os.getenv("AWS_REGION_NAME", "us-east-1")
-        
-        if not api_key:
-            raise ValueError("AWS_ACCESS_KEY_ID not found in environment variables or .env file")
-        if not aws_secret:
-            raise ValueError("AWS_SECRET_ACCESS_KEY not found in environment variables or .env file")
         # Store region in endpoint field for Bedrock
         endpoint = aws_region
     
     elif provider == "vertex_ai":
         # Vertex AI uses GCP credentials (service account JSON or GOOGLE_APPLICATION_CREDENTIALS)
-        # No API key needed, but we check for credentials
+        # No API key needed, but we set a placeholder to pass validation
         gcp_creds = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
         if not gcp_creds and not os.path.exists(os.path.expanduser("~/.config/gcloud/application_default_credentials.json")):
             raise ValueError(
                 "GCP credentials not found. Set GOOGLE_APPLICATION_CREDENTIALS or run 'gcloud auth application-default login'"
             )
-        # Vertex AI doesn't use api_key, but we set a placeholder to pass validation
         api_key = "vertex_ai_placeholder"
     
     elif provider == "ollama":
@@ -217,64 +188,3 @@ def load_llm_config() -> Dict[str, Any]:
     return config
 
 
-def validate_config(config: Dict[str, Any]) -> bool:
-    """
-    Validate LLM configuration.
-    
-    Args:
-        config: Configuration dictionary
-    
-    Returns:
-        True if valid, raises ValueError if invalid
-    """
-    # Check required fields
-    required_fields = ["provider", "model"]
-    
-    for field in required_fields:
-        if field not in config:
-            raise ValueError(f"Missing required configuration field: {field}")
-    
-    # Normalize aliases to canonical provider name
-    provider = config["provider"]
-    if provider == "google":
-        provider = "gemini"
-        config["provider"] = provider  # Update config with normalized value
-    
-    # Validate provider is in allowed list
-    if provider not in ALLOWED_LLM_PROVIDERS:
-        raise ValueError(
-            f"Provider '{provider}' is not supported. "
-            f"Allowed providers: {', '.join(sorted(ALLOWED_LLM_PROVIDERS))}"
-        )
-    
-    # Validate provider-specific requirements
-    if provider == "azure":
-        if "endpoint" not in config:
-            raise ValueError("Azure provider requires 'endpoint' in configuration")
-        if "api_key" not in config or not config["api_key"]:
-            raise ValueError("Azure provider requires 'api_key' in configuration")
-    
-    elif provider == "bedrock":
-        if "api_key" not in config or not config["api_key"]:
-            raise ValueError("Bedrock provider requires 'api_key' (AWS_ACCESS_KEY_ID) in configuration")
-        if "aws_secret_access_key" not in config or not config["aws_secret_access_key"]:
-            raise ValueError("Bedrock provider requires 'aws_secret_access_key' in configuration")
-        if "endpoint" not in config or not config["endpoint"]:
-            raise ValueError("Bedrock provider requires 'endpoint' (AWS_REGION_NAME) in configuration")
-    
-    elif provider == "vertex_ai":
-        # Vertex AI uses placeholder api_key, so we skip api_key validation
-        pass
-    
-    elif provider == "ollama":
-        # Ollama uses placeholder api_key, so we skip api_key validation
-        if "endpoint" not in config:
-            raise ValueError("Ollama provider requires 'endpoint' (OLLAMA_BASE_URL) in configuration")
-    
-    else:
-        # All other providers require api_key
-        if "api_key" not in config or not config["api_key"]:
-            raise ValueError(f"{provider} provider requires 'api_key' in configuration")
-    
-    return True
-    

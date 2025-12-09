@@ -77,39 +77,41 @@ def main():
     # Check for CodeQL in PATH or .env
     codeql_cmd = None
     
-    # Try to get from .env first
     try:
         from src.utils.config import get_codeql_path
+        from src.utils.config_validator import find_codeql_executable
+        
         codeql_path = get_codeql_path()
         print(f"Checking CodeQL path: {codeql_path}")
         
-        if codeql_path and codeql_path != "codeql":
-            # Custom path specified - strip quotes if present
-            codeql_path = codeql_path.strip('"').strip("'")
-            if os.path.exists(codeql_path):
-                codeql_cmd = codeql_path
-                print(f"✅ [OK] Found CodeQL path: {codeql_path}")
-            elif os.path.exists(codeql_path + ".exe"):
-                codeql_cmd = codeql_path + ".exe"
-                print(f"✅ [OK] Found CodeQL path: {codeql_cmd}")
+        # Use helper function to find executable
+        codeql_cmd = find_codeql_executable()
+        
+        if codeql_cmd:
+            if codeql_path == "codeql":
+                print(f"🔍 Checking if 'codeql' is in PATH...")
+                print(f"✅ Found in PATH: {codeql_cmd}")
             else:
-                print(f"[ERROR] Path does not exist: {codeql_path}")
-                print(f"[ERROR] Also checked: {codeql_path}.exe")
-        elif codeql_path == "codeql":
-            # Check if 'codeql' is in PATH
-            print(f"🔍 Checking if 'codeql' is in PATH...")
-            codeql_cmd = shutil.which("codeql")
-            if codeql_cmd:
-                print(f"[OK] Found in PATH: {codeql_cmd}")
+                print(f"✅ Found CodeQL path: {codeql_cmd}")
+        else:
+            # Provide detailed error messages
+            if codeql_path and codeql_path != "codeql":
+                # Custom path specified - strip quotes if present
+                codeql_path_clean = codeql_path.strip('"').strip("'")
+                print(f"❌ Path does not exist: {codeql_path_clean}")
+                if os.name == 'nt':
+                    print(f"Also checked: {codeql_path_clean}.cmd")
+                    print(f"Also checked: {codeql_path_clean}.exe")
             else:
-                print(f"[ERROR] 'codeql' not found in PATH")
+                print(f"🔍 Checking if 'codeql' is in PATH...")
+                print(f"❌ 'codeql' not found in PATH")
     except Exception as e:
         # Fallback to checking PATH
-        print(f"[ERROR] Error loading config: {e}")
-        print(f"[ERROR] Falling back to PATH check...")
+        print(f"❌ Error loading config: {e}")
+        print(f"🔍 Falling back to PATH check...")
         codeql_cmd = shutil.which("codeql")
         if codeql_cmd:
-            print(f"[OK] Found in PATH: {codeql_cmd}")
+            print(f"✅ Found in PATH: {codeql_cmd}")
     
     if codeql_cmd:
         print("📦 Installing CodeQL packs... This may take a moment ⏳")
@@ -134,17 +136,37 @@ def main():
     else:
         print("❌ CodeQL CLI not found. Skipping CodeQL pack installation.")
         print("🔗 Install CodeQL CLI from: https://github.com/github/codeql-cli-binaries/releases")
-        print("🔗 Or set CODEQL_PATH in your .env file to the CodeQL executable path.")
-        print("After doing so, run: python setup.py or install packages manually")
+        print("   After installation, either add CodeQL to your PATH or set CODEQL_PATH in your .env file.")
+        print("   Then run: python setup.py or install packages manually")
         return
+    
+    # Optional: Validate CodeQL configuration if .env file exists
+    env_file = PROJECT_ROOT / ".env"
+    if env_file.exists():
+        print("\n🔍 Validating CodeQL configuration...")
+        try:
+            from src.utils.config_validator import validate_codeql_path
+            is_valid, error = validate_codeql_path()
+            if is_valid:
+                print("✅ CodeQL configuration validated successfully!")
+            else:
+                print("⚠️  CodeQL configuration issue detected:")
+                print(f"   {error.split(chr(10))[0]}")  # Print first line of error
+                print("   Please fix this before running the pipeline.")
+        except Exception as e:
+            print(f"⚠️  Could not validate CodeQL configuration: {e}")
+            print("   This is not critical - you can fix configuration later.")
     
     print("\n🎉 Setup completed successfully! 🎉")
     print("🔗 Next steps:")
-    print("1. Make sure you have a .env file with all the required variables")
-    print("2. Run one of the following commands:")
-    print("   • python src/pipeline.py <repo_org/repo_name>  # Analyze a specific repository")
-    print("   • python src/pipeline.py                      # Analyze top 100 repositories")
-    print("   • python examples/example.py                  # See a full pipeline run")
+    if not env_file.exists():
+        print("1. Create a .env file with all the required variables (see README.md)")
+        print("2. Run one of the following commands to start the pipeline:")
+    else:
+        print("Run one of the following commands to start the pipeline:")
+    print("   • python src/pipeline.py <repo_org/repo_name>    # Analyze a specific repository")
+    print("   • python src/pipeline.py                         # Analyze top 100 repositories")
+    print("   • python examples/example.py                     # See a full pipeline run")
 
 if __name__ == "__main__":
     main()

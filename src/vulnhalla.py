@@ -16,6 +16,7 @@ from src.utils.common_functions import (
 
 # Script that holds your GPT logic
 from src.llm.llm_analyzer import LLMAnalyzer
+from src.utils.config_validator import validate_and_exit_on_error
 
 
 class IssueAnalyzer:
@@ -419,7 +420,7 @@ class IssueAnalyzer:
         false_issues = []
         more_data = []
 
-        print(f"found {len(issues_of_type)} issues of type {issue_type}")
+        print(f"Found {len(issues_of_type)} issues of type {issue_type}")
         print()
         for issue in issues_of_type:
             issue_id += 1
@@ -522,6 +523,10 @@ class IssueAnalyzer:
         4. Asks the LLM for each issue's snippet context, saving final results
            in various directory structures.
         """
+        # Validate configuration before starting
+        if self.config is None:
+            validate_and_exit_on_error()
+        
         llm_analyzer = LLMAnalyzer()
         llm_analyzer.init_llm_client(config=self.config)
 
@@ -533,7 +538,7 @@ class IssueAnalyzer:
         total_issues = 0
         for issue_type in issues_statistics:
             total_issues += len(issues_statistics[issue_type])
-        print("total issues found:", total_issues)
+        print("Total issues found:", total_issues)
         print()
 
         # Process all issues, type by type

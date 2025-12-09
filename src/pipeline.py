@@ -19,6 +19,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from src.codeql.fetch_repos import fetch_codeql_dbs
 from src.codeql.run_codeql_queries import compile_and_run_codeql_queries
 from src.utils.config import get_codeql_path
+from src.utils.config_validator import validate_and_exit_on_error
 from src.vulnhalla import IssueAnalyzer
 from src.ui.ui_app import main as ui_main
 
@@ -34,6 +35,10 @@ def analyze_pipeline(repo: Optional[str] = None, lang: str = "c", threads: int =
     """
     print("🚀 Starting Vulnhalla Analysis Pipeline")
     print("=" * 60)
+    
+    # Validate configuration before starting
+    validate_and_exit_on_error()
+    
     # Step 1: Fetch CodeQL databases
     print("\n[1/4] Fetching CodeQL Databases")
     print("-" * 60)

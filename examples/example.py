@@ -20,12 +20,17 @@ from src.codeql.fetch_repos import fetch_codeql_dbs
 from src.codeql.run_codeql_queries import compile_and_run_codeql_queries, DEFAULT_LANG
 from src.vulnhalla import IssueAnalyzer
 from src.utils.config import get_codeql_path
+from src.utils.config_validator import validate_and_exit_on_error
 from src.ui.ui_app import main as ui_main
 
 
 def main():
     print("Starting Vulnhalla pipeline... This may take a few minutes.")
     print()
+    
+    # Validate configuration before starting
+    validate_and_exit_on_error()
+    
     # 1) Fetch CodeQL database
     print("[1/3] Fetching CodeQL DBs")
     fetch_codeql_dbs(

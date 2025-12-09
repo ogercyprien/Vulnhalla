@@ -37,7 +37,7 @@ Vulnhalla automates the complete security analysis pipeline:
 Before starting, ensure you have:
 
 - **Python 3.10 – 3.13** (Python 3.11 or 3.12 recommended)
-  - Python 3.14+ is not supported (this tool needs grpcio which is not supported by Python 3.14+)
+  - Python 3.14+ is not supported (this tool uses grpcio which is not supported by Python 3.14+)
   - Download from [python.org](https://www.python.org/downloads/)
 
 - **CodeQL CLI**
@@ -75,16 +75,11 @@ GITHUB_TOKEN=ghp_your_token_here
 PROVIDER=openai
 MODEL=gpt-4o
 OPENAI_API_KEY=your-api-key-here
-```
-
-**Optional parameters** (with defaults - recommended to leave as-is):
-
-> **Note:** Do not increase these values unless you fully understand the impact. Lower values keep the model stable and deterministic, which is critical for security analysis. Higher values may cause the model to become inconsistent, creative, or hallucinate results.
-
-```env
 LLM_TEMPERATURE=0.2
 LLM_TOP_P=0.2
 ```
+
+> **📖 For complete configuration reference:** See [Configuration Reference](#-configuration-reference) below for all supported providers (OpenAI, Azure, Gemini), required/optional variables, and detailed examples.
 
 **Optional:** Create a virtual environment:
 
@@ -106,12 +101,8 @@ python setup.py
 **Note:** Virtual environment is optional. If `venv/` exists, setup will use it. Otherwise, it installs to your current Python environment.
 
 The setup script will:
-- Install Python dependencies
-if dependencies are already installed (skips if found)
 - Install Python dependencies from `requirements.txt`
 - Initialize CodeQL packs
-
-**Note:** If a `venv/` directory exists, setup will use it. Otherwise, it installs to your current Python environment.
 
 **Option 2: Manual Setup**
 
@@ -272,6 +263,63 @@ Each `*_raw.json` contains:
 
 - **Import errors in UI**:  
   Make sure you're running from the project root directory, or use `python examples/ui_example.py` which handles path setup.
+
+---
+
+## ⚙️ Configuration Reference
+
+### Environment Variables
+
+All configuration is managed through environment variables in your `.env` file. Here's a complete reference:
+
+#### Required Variables
+
+| Variable | Required For | Description |
+|----------|--------------|-------------|
+| `CODEQL_PATH` | All | Path to CodeQL executable. Defaults to `codeql` if CodeQL is in PATH. Use full path if not in PATH (e.g., `C:\path\to\codeql\codeql.cmd` on Windows) |
+| `PROVIDER` | All | LLM provider: `openai`, `azure`, or `gemini` |
+| `MODEL` | All | Model name (e.g., `gpt-4o`, `gpt-4-turbo`, `gemini-2.5-flash`) |
+
+#### Provider-Specific Required Variables
+
+**OpenAI:**
+| Variable | Description |
+|----------|-------------|
+| `OPENAI_API_KEY` | Your OpenAI API key from [platform.openai.com](https://platform.openai.com/api-keys) |
+
+**Azure OpenAI:**
+| Variable | Description |
+|----------|-------------|
+| `AZURE_OPENAI_API_KEY` or `AZURE_API_KEY` | Your Azure OpenAI API key |
+| `AZURE_OPENAI_ENDPOINT` or `AZURE_API_BASE` | Your Azure OpenAI endpoint URL (e.g., `https://your-resource.openai.azure.com`) |
+| `AZURE_OPENAI_API_VERSION` or `AZURE_API_VERSION` | API version (default: `2024-08-01-preview`) |
+
+**Gemini (Google):**
+| Variable | Description |
+|----------|-------------|
+| `GOOGLE_API_KEY` | Your Google API key from [Google AI Studio](https://makersuite.google.com/app/apikey) |
+
+#### Optional Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `GITHUB_TOKEN` | - | GitHub API token for higher rate limits. Get from [GitHub Settings > Tokens](https://github.com/settings/tokens) |
+| `LLM_TEMPERATURE` | `0.2` | LLM temperature (0.0-2.0). Lower = more deterministic. **Recommended: keep at 0.2** |
+| `LLM_TOP_P` | `0.2` | LLM top-p sampling (0.0-1.0). Lower = more focused. **Recommended: keep at 0.2** |
+
+> **⚠️ Important:** Do not increase `LLM_TEMPERATURE` or `LLM_TOP_P` unless you fully understand the impact. Lower values keep the model stable and deterministic, which is critical for security analysis. Higher values may cause the model to become inconsistent, creative, or hallucinate results.
+
+> **📝 Note:** For additional configuration examples, see the `.env.example` file in the project root.
+
+### Configuration Validation
+
+Vulnhalla validates your configuration at startup. If required variables are missing or invalid, you'll see clear error messages indicating what needs to be fixed.
+
+**Common validation errors:**
+- Missing API key for selected provider
+- Invalid provider name (must be `openai`, `azure`, or `gemini`)
+- Missing Azure endpoint (required for Azure provider)
+- Invalid CodeQL path (if `CODEQL_PATH` is set but file doesn't exist)
 
 ---
 

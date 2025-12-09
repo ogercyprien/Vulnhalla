@@ -14,7 +14,8 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 # Import the relevant LLM clients here
 import litellm
-from src.utils.llm_config import load_llm_config, validate_config, get_model_name
+from src.utils.llm_config import load_llm_config, get_model_name
+from src.utils.config_validator import validate_llm_config_dict
 
 from src.utils.common_functions import read_file_lines_from_zip
 
@@ -182,7 +183,7 @@ class LLMAnalyzer:
         try:
             # If config is provided, use it directly
             if config:
-                validate_config(config)
+                validate_llm_config_dict(config)
                 self.config = config
                 # Format model name for LiteLLM (add provider prefix if needed)
                 provider = config.get("provider", "openai")
@@ -194,7 +195,7 @@ class LLMAnalyzer:
             
             # Load from .env file
             config = load_llm_config()
-            validate_config(config)
+            validate_llm_config_dict(config)
             self.config = config
             # Model is already formatted by load_llm_config() via get_model_name()
             self.model = config.get("model", "gpt-4o")
