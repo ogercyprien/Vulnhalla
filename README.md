@@ -5,7 +5,11 @@
   <img src="images/vulnhalla_logo.png" alt="Vulnhalla" width="400">
 </div>
 
-Vulnhalla automates the complete security analysis pipeline:
+For a detailed overview of the research and motivation behind Vulnhalla, see the official CyberArk Threat Research blog post:
+
+**["Vulnhalla: Picking the True Vulnerabilities from the CodeQL Haystack"](https://www.cyberark.com/resources/threat-research-blog/vulnhalla-picking-the-true-vulnerabilities-from-the-codeql-haystack)**
+
+### Vulnhalla automates the complete security analysis pipeline:
 
 1. **Fetching repositories** of a given programming language from GitHub
 2. **Downloading** their corresponding [CodeQL](https://github.com/github/codeql) databases (if available)
