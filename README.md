@@ -340,6 +340,20 @@ The UI maps these to:
 
 ## 🔧 Development
 
+### Running Tests
+
+The project includes basic test infrastructure using pytest:
+
+```bash
+# Run all tests
+pytest
+
+# Run with verbose output
+pytest -v
+```
+
+The test suite includes smoke tests to verify the test infrastructure is set up correctly.
+
 ### Project Dependencies
 
 See `requirements.txt` for Python dependencies:
@@ -349,6 +363,7 @@ See `requirements.txt` for Python dependencies:
 - `python-dotenv` - Environment variable management
 - `PyYAML` - YAML parsing for CodeQL pack files
 - `textual` - Terminal UI framework
+- `pytest` - Testing framework
 
 ### CodeQL Queries
 
