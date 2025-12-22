@@ -9,6 +9,7 @@ import sys
 import subprocess
 import shutil
 from pathlib import Path
+from src.utils.config import SUPPORTED_LANGUAGES
 
 # Get project root
 PROJECT_ROOT = Path(__file__).parent
@@ -45,6 +46,39 @@ def check_dependencies_installed() -> bool:
         return False
 
 
+def install_pack(directory: Path, codeql_cmd: str, description: str):
+    """
+    Helper function to install a CodeQL pack in a specific directory.
+    Running 'codeql pack install' ensures the cache is populated even if a lock file exists.
+    """
+    if not directory.exists():
+        return
+
+    logger.info(f"📦 Installing {description}...")
+    try:
+        # We must change directory because 'codeql pack install' expects to run in the pack root
+        os.chdir(str(directory))
+        
+        result = subprocess.run(
+            [codeql_cmd, "pack", "install"], 
+            check=False, 
+            capture_output=True, 
+            text=True
+        )
+        
+        if result.returncode != 0:
+            logger.warning(f"Failed to install {description}:")
+            logger.warning(result.stderr)
+        else:
+            logger.info(f"✅ {description} installed/verified.")
+            
+    except Exception as e:
+        logger.error(f"❌ Exception installing {description}: {e}")
+    finally:
+        # Always return to project root
+        os.chdir(str(PROJECT_ROOT))
+
+
 def main():
     """Run the Vulnhalla setup process.
 
@@ -54,34 +88,6 @@ def main():
     """
     logger.info("Vulnhalla Setup")
     logger.info("=" * 50)
-    
-    # Check if virtual environment exists
-    venv_path = PROJECT_ROOT / "venv"
-    use_venv = venv_path.exists()
-    
-    if use_venv:
-        # Use virtual environment pip
-        if os.name == 'nt':  # Windows
-            pip_exe = [str(PROJECT_ROOT / "venv/Scripts/pip.exe")]
-        else:  # Unix/macOS/Linux
-            pip_exe = [str(PROJECT_ROOT / "venv/bin/pip")]
-        logger.info("Using virtual environment...")
-    else:
-        # Use system pip
-        pip_exe = [sys.executable, "-m", "pip"]
-        logger.info("Installing to current Python environment...")
-    
-    if check_dependencies_installed():
-        logger.info("✅ All dependencies are already installed! Skipping installation.")
-    else:
-        # Install dependencies
-        logger.info("📦 Installing Python dependencies... This may take a moment ⏳")
-        try:
-            subprocess.run(pip_exe + ["install","-q", "-r", str(PROJECT_ROOT / "requirements.txt")], check=True)
-            logger.info("✅ Python dependencies installed successfully!")
-        except subprocess.CalledProcessError as e:
-            logger.error("\n❌ Setup failed. Please fix the missing dependencies and run setup.py again.")
-            sys.exit(1)
     
     # Install CodeQL packs
     # Check for CodeQL in PATH or .env
@@ -124,24 +130,18 @@ def main():
     
     if codeql_cmd:
         logger.info("📦 Installing CodeQL packs... This may take a moment ⏳")
+
+        for lang in SUPPORTED_LANGUAGES:
+            gh_lang = "cpp" if lang == "c" else lang
         
-        # Tools pack
-        tools_dir = PROJECT_ROOT / "data/queries/cpp/tools"
-        if tools_dir.exists():
-            os.chdir(str(tools_dir))
-            result = subprocess.run([codeql_cmd, "pack", "install"], check=False, capture_output=True, text=True)
-            if result.returncode != 0:
-                logger.warning("Failed to install tools pack: %s", result.stderr)
-            os.chdir(str(PROJECT_ROOT))
-        
-        # Issues pack
-        issues_dir = PROJECT_ROOT / "data/queries/cpp/issues"
-        if issues_dir.exists():
-            os.chdir(str(issues_dir))
-            result = subprocess.run([codeql_cmd, "pack", "install"], check=False, capture_output=True, text=True)
-            if result.returncode != 0:
-                logger.warning("Failed to install issues pack: %s", result.stderr)
-            os.chdir(str(PROJECT_ROOT))
+            # Tools packs
+            tools_dir = PROJECT_ROOT / "data/queries" / gh_lang / "tools"
+            install_pack(tools_dir, codeql_cmd, f"{lang} tools pack")
+
+            # Issues packs
+            issues_dir = PROJECT_ROOT / "data/queries" / gh_lang / "issues"
+            install_pack(issues_dir, codeql_cmd, f"{lang} issues pack")
+            
     else:
         logger.error("❌ CodeQL CLI not found. Skipping CodeQL pack installation.")
         logger.info("🔗 Install CodeQL CLI from: https://github.com/github/codeql-cli-binaries/releases")
@@ -179,4 +179,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
