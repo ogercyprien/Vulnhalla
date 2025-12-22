@@ -12,6 +12,9 @@ env/
 ENV/
 .venv/
 
+# codeql binaries
+codeql/
+
 # Environment variables (contains API keys)
 .env
 .env.local
@@ -22,6 +25,7 @@ output/databases/
 output/results/
 output/zip_dbs/
 data/queries/**/*.qlx
+data/queries/**/.codeql/
 data/queries/**/codeql-pack.lock.yml
 
 # IDE / OS files

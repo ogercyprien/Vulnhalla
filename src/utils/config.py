@@ -16,6 +16,8 @@ if os.path.exists(".env"):
 elif os.path.exists(".env.example"):
     load_dotenv(".env.example")
 
+SUPPORTED_LANGUAGES = ["c", "python"]
+
 
 def get_codeql_path() -> str:
     """
@@ -43,4 +45,14 @@ def get_github_token() -> Optional[str]:
         GitHub token string if set, None otherwise.
     """
     return os.getenv("GITHUB_TOKEN")
+
+
+def get_supported_languages() -> list[str]:
+    """
+    Get list of supported programming languages.
+
+    Returns:
+        List of language codes (e.g. ['c', 'python']).
+    """
+    return SUPPORTED_LANGUAGES
 
