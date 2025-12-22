@@ -176,6 +176,19 @@ class LLMAnalyzer:
             },
         ]
 
+    def set_language(self, lang: str) -> None:
+        """
+        Adjust tools and messages based on the target language.
+
+        Args:
+            lang (str): 'c', 'cpp', 'python', etc.
+        """
+        # Example: Python doesn't have macros, so we could remove get_macro
+        # Or we can just leave it; the LLM won't use it if it knows it's Python.
+        # But if you want strict correctness:
+        if lang == "python":
+             self.tools = [t for t in self.tools if t["function"]["name"] != "get_macro"]
+
     def init_llm_client(self, config: Optional[Dict[str, Any]] = None) -> None:
         """
         Initialize the LLM configuration for LiteLLM.
@@ -635,7 +648,7 @@ class LLMAnalyzer:
 
         Returns:
             str: The code snippet, or an error message if no dictionary was provided.
-        
+
         Raises:
             CodeQLError: If ZIP file cannot be read or file not found in archive.
                 This exception is raised by `read_file_lines_from_zip()` and propagated here.
@@ -644,7 +657,13 @@ class LLMAnalyzer:
             return str(current_function)
 
         src_zip = os.path.join(db_path, "src.zip")
-        file_path = current_function["file"].replace("\"", "")[1:]
+        file_path = current_function["file"].replace("\"", "")
+        
+        # Clean path for zipfile compatibility
+        file_path = file_path.replace("//", "/")
+        if file_path.startswith("/"):
+            file_path = file_path[1:]
+            
         code_file = read_file_lines_from_zip(src_zip, file_path)
         lines = code_file.split("\n")
 

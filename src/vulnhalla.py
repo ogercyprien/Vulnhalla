@@ -148,9 +148,13 @@ class IssueAnalyzer:
         best_function = None
         smallest_range = float('inf')
 
+        # Normalize target path for comparison (remove leading slash for consistency)
+        target_path_suffix = file_path.strip("/")
+
         try:
             with open(function_tree_file, "r", encoding="utf-8") as f:
                 for row in f:
+                    # Pre-filter: simplistic check to avoid regex on every line
                     if file_path in row:
                         fields = re.split(r',(?=(?:[^"]*"[^"]*")*[^"]*$)', row.strip())
                         if len(fields) != len(keys):
@@ -163,8 +167,15 @@ class IssueAnalyzer:
                         except ValueError:
                             continue  # Skip if lines aren't integers
 
-                        if start_line <= line <= end_line:
-                            if file_path in function["file"]:
+                        # Check if one path ends with the other
+                        csv_file = function["file"].replace('"', '').strip("/")
+
+                        is_path_match = (csv_file == target_path_suffix) or \
+                                      (len(csv_file) > len(target_path_suffix) and csv_file.endswith(target_path_suffix)) or \
+                                      (len(target_path_suffix) > len(csv_file) and target_path_suffix.endswith(csv_file))
+
+                        if is_path_match:
+                            if start_line <= line <= end_line:
                                 size = end_line - start_line
                                 if size < smallest_range:
                                     best_function = function
@@ -232,19 +243,29 @@ class IssueAnalyzer:
             start_offset = match.group(5)
             end_offset = match.group(6)
 
-            # Read snippet from the code
+            # Standardize the path: remove leading slashes and fix double slashes
+            clean_path = file_path.strip("/")
+            clean_path = clean_path.replace("//", "/")
+
             if path_type == "relative://":
-                full_path = code_path + file_path
+                # Join code_path with clean_path safely
+                base = code_path.strip("/")
+                full_path = f"{base}/{clean_path}"
             else:
-                # Handle 'file://' or something else by removing the leading slash
-                full_path = file_path[1:] if file_path.startswith("/") else file_path
+                # Use the cleaned absolute path directly
+                full_path = clean_path
 
             code_text = read_file_lines_from_zip(
                 os.path.join(db_path, "src.zip"),
                 full_path
             )
             code_lines = code_text.split("\n")
-            snippet = code_lines[int(line_number) - 1][int(start_offset) - 1:int(end_offset)]
+            # Handle potential line number out of bounds
+            line_idx = int(line_number) - 1
+            if 0 <= line_idx < len(code_lines):
+                snippet = code_lines[line_idx][int(start_offset) - 1:int(end_offset)]
+            else:
+                snippet = code_lines[int(line_number) - 1][int(start_offset) - 1:int(end_offset)]
 
             file_name = os.path.split(file_path)[1]
             return f"{variable} '{snippet}' ({file_name}:{int(line_number)})"
@@ -431,12 +452,15 @@ class IssueAnalyzer:
         functions = [current_function]
         for another_func_ref in extra_lines:
             path_type, file_ref, line_ref = another_func_ref
-            file_ref = file_ref.strip()
+
+            clean_ref = file_ref.strip().strip("/")
+            clean_ref = clean_ref.replace("//", "/")
 
             if path_type == "relative://":
-                file_ref = self.code_path + file_ref
+                base = self.code_path.strip("/")
+                file_ref_final = f"{base}/{clean_ref}"
             else:
-                file_ref = file_ref[1:] if file_ref.startswith("/") else file_ref
+                file_ref_final = clean_ref
 
             # If it's within the same function's line range, skip
             start_line_func = int(current_function["start_line"])
@@ -445,12 +469,12 @@ class IssueAnalyzer:
                 continue
 
             # Attempt to find the new function
-            new_function = self.find_function_by_line(function_tree_file, "/" + file_ref, int(line_ref))
+            new_function = self.find_function_by_line(function_tree_file, "/" + file_ref_final, int(line_ref))
             if new_function and new_function not in functions:
                 functions.append(new_function)
-                code_file2 = read_file_lines_from_zip(src_zip_path, file_ref).split("\n")
+                code_file2 = read_file_lines_from_zip(src_zip_path, file_ref_final).split("\n")
                 code += (
-                    "\n\nfile: " + file_ref + "\n" +
+                    "\n\nfile: " + file_ref_final + "\n" +
                     self.extract_function_code(code_file2, new_function)
                 )
 
@@ -491,23 +515,57 @@ class IssueAnalyzer:
             self.db_path = issue["db_path"]
             db_yml_path = os.path.join(self.db_path, "codeql-database.yml")
             db_yml = read_yml(db_yml_path)
-            self.code_path = db_yml["sourceLocationPrefix"]
+            self.code_path = db_yml.get("sourceLocationPrefix", "")
 
-            # Adjust Windows / Linux path references
-            if ":" in self.code_path:
-                self.code_path = self.code_path.replace(":", "_").replace("\\", "/")
-            else:
-                self.code_path = self.code_path[1:]
+            # Only apply C++ style adjustment if it looks like a virtual absolute path
+            if self.lang == "c" and ":" in self.code_path:
+                 if ":" in self.code_path:
+                     self.code_path = self.code_path.replace(":", "_").replace("\\", "/")
+                 elif self.code_path.startswith("/"):
+                     self.code_path = self.code_path[1:]
+            
+            # For Python, paths are often just relative, so we might not need adjustment
+            # but ensure we don't end up with "//"
+            if self.code_path and not self.code_path.endswith("/"):
+                self.code_path += "/"
 
             function_tree_file = os.path.join(self.db_path, "FunctionTree.csv")
             src_zip_path = os.path.join(self.db_path, "src.zip")
 
-            full_file_path = self.code_path + issue["file"]
-            code_file_contents = read_file_lines_from_zip(src_zip_path, full_file_path).split("\n")
+            # Normalize the search path for FunctionTree lookup
+            # Remove double slashes that cause string mismatch in CSV lookup
+            raw_search_path = "/" + self.code_path + issue["file"]
+            search_path_normalized = raw_search_path.replace("//", "/")
+
+            # Normalize the zip path for file extraction
+            # Zip files store paths relative to the zip root (e.g. 'repos/...') 
+            # but CodeQL DBs store them as absolute ('/repos/...').
+            # Strip leading/trailing slashes from base path
+            clean_base = self.code_path.strip("/")
+            # Strip leading slashes from file path
+            clean_file = issue["file"].strip("/")
+            # Join with a single forward slash (zip standard)
+            full_file_path = f"{clean_base}/{clean_file}"
+            # Ensure double slashes are gone
+            full_file_path = full_file_path.replace("//", "/")
+
+            try:
+                code_text = read_file_lines_from_zip(src_zip_path, full_file_path)
+            except CodeQLError:
+                # Fallback: Try just the relative file path if the full path fails
+                # (e.g. if the zip structure doesn't include the full repo prefix)
+                try:
+                    code_text = read_file_lines_from_zip(src_zip_path, clean_file)
+                    full_file_path = clean_file
+                except CodeQLError:
+                     logger.warning(f"Could not find file in zip. Tried '{full_file_path}' and '{clean_file}'")
+                     continue
+
+            code_file_contents = code_text.split("\n")
 
             current_function = self.find_function_by_line(
                 function_tree_file,
-                "/" + self.code_path + issue["file"],
+                search_path_normalized,
                 int(issue["start_line"])
             )
             if not current_function:
