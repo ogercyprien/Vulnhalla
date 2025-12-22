@@ -22,7 +22,7 @@ class ControlsBar(Container):
         with Vertical():
             # Language label only
             with Horizontal():
-                yield Static("Language: C (only language currently supported)", classes="control-label")
+                yield Static("Language: C", classes="control-label", id="lang-label")
             # Filter and buttons
             with Horizontal():
                 yield Label("Filter by llm decision:", classes="control-label")

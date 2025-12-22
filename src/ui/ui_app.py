@@ -139,7 +139,17 @@ class VulnhallaUI(App):
         
         Displays error notifications if any files fail to load.
         """
-        self.current_lang = "c"  # Only C is currently supported
+        # Auto-detect language output/results/python first
+        if (self.loader.results_root / "python").exists():
+            self.current_lang = "python"
+        else:
+            self.current_lang = "c"
+
+        # We try to find the Static widget containing the language text
+        try:
+            self.query_one("#lang-label", Static).update(f"Language: {self.current_lang.upper()}")
+        except Exception:
+            pass  # Fail silently if widget not found
         
         # Save manual decisions before reloading
         manual_decisions_map: Dict[str, Optional[str]] = {}
