@@ -108,7 +108,19 @@ pip install -r requirements.txt
 ```
 
 ### Initialize CodeQL packs
+
+You can run `setup.py` to install packs for all supported languages automatically. 
+If you prefer to do it manually for a specific language (e.g., Python):
+
 ```bash
+# For Python
+cd data/queries/python/tools
+codeql pack install
+cd ../issues
+codeql pack install
+cd ../../../..
+
+# For C/C++
 cd data/queries/cpp/tools
 codeql pack install
 cd ../issues
@@ -120,14 +132,21 @@ cd ../../../..
 
 **Option 1: Using the Unified Pipeline**
 
-Run the complete pipeline with a single command:
+Run the pipeline with the `--language` (or `-l`) argument. The default is `c`.
 
 ```bash
-# Analyze a specific repository
+# Analyze a C repository (default)
 python src/pipeline.py redis/redis
 
-# Analyze top 100 repositories
-python src/pipeline.py
+# Analyze a Python repository
+python src/pipeline.py pallets/flask --language python
+
+# Analyze top 100 Python repositories
+python src/pipeline.py --language python
+
+# Using Local Source Code 
+# If you already have the source code locally (e.g., in air-gapped environments) or want to skip the GitHub download:
+python src/pipeline.py pallets/flask --language python --local-repo-folder /my/local/repos/flask
 ```
 
 This will automatically:
@@ -186,10 +205,10 @@ The UI displays a two-panel top area with a controls bar at the bottom:
 
 **Bottom Controls Bar:**
 
-- Language: C (only language currently supported)
-- Filter by llm desicion dropdown: All, True Positive, False Positive, Needs more Info to decide
-- Action buttons: Refresh, Run Analysis
-- Key bindings help text
+- **Language**: Displays the currently detected language (e.g., C, PYTHON).
+- **Filter by llm decision**: Dropdown to filter results (All, True Positive, etc.).
+- **Action buttons**: Refresh, Run Analysis.
+- **Key bindings**: Quick reference for keyboard shortcuts.
 
 ### Key Bindings
 
@@ -368,6 +387,10 @@ See `requirements.txt` for Python dependencies:
 ### CodeQL Queries
 
 CodeQL queries are organized in `data/queries/<LANG>/`:
+- `data/queries/cpp/` - C/C++ queries
+- `data/queries/python/` - Python queries
+
+Inside each language folder:
 - `issues/` - Security issue detection queries
 - `tools/` - Helper queries (function trees, classes, global variables, macros)
 
