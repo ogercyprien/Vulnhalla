@@ -23,9 +23,13 @@ from src.utils.config import get_codeql_path, SUPPORTED_LANGUAGES
 from src.utils.config_validator import validate_and_exit_on_error
 from src.utils.logger import setup_logging, get_logger
 from src.utils.exceptions import (
-    CodeQLError, CodeQLConfigError, CodeQLExecutionError,
-    LLMError, LLMConfigError, LLMApiError,
-    VulnhallaError
+    CodeQLError,
+    CodeQLConfigError,
+    CodeQLExecutionError,
+    LLMError,
+    LLMConfigError,
+    LLMApiError,
+    VulnhallaError,
 )
 from src.vulnhalla import IssueAnalyzer
 from src.ui.ui_app import main as ui_main
@@ -49,7 +53,13 @@ def _log_exception_cause(e: Exception) -> None:
             logger.error("   Cause: %s", cause)
 
 
-def analyze_pipeline(repo: Optional[str] = None, lang: str = "c", threads: int = 16, open_ui: bool = True, local_repo_folder: Optional[str] = None) -> None:
+def analyze_pipeline(
+    repo: Optional[str] = None,
+    lang: str = "c",
+    threads: int = 16,
+    open_ui: bool = True,
+    local_repo_folder: Optional[str] = None,
+) -> None:
     """
     Run the complete Vulnhalla pipeline: fetch, analyze, classify, and optionally open UI.
 
@@ -90,10 +100,17 @@ See README.md for configuration reference.
         logger.info("-" * 60)
         if repo:
             logger.info("Fetching database for: %s", repo)
-            fetch_codeql_dbs(lang=lang, threads=threads, single_repo=repo, local_source_dir=local_repo_folder)
+            fetch_codeql_dbs(
+                lang=lang,
+                threads=threads,
+                single_repo=repo,
+                local_source_dir=local_repo_folder,
+            )
         else:
             logger.info("Fetching top repositories for language: %s", lang)
-            fetch_codeql_dbs(lang=lang, max_repos=100, threads=4, local_source_dir=local_repo_folder)
+            fetch_codeql_dbs(
+                lang=lang, max_repos=100, threads=4, local_source_dir=local_repo_folder
+            )
     except CodeQLConfigError as e:
         logger.error("❌ Configuration error while fetching CodeQL databases: %s", e)
         _log_exception_cause(e)
@@ -102,9 +119,11 @@ See README.md for configuration reference.
     except CodeQLError as e:
         logger.error("❌ Failed to fetch CodeQL databases: %s", e)
         _log_exception_cause(e)
-        logger.error("   Please check file permissions, disk space, and GitHub API access.")
+        logger.error(
+            "   Please check file permissions, disk space, and GitHub API access."
+        )
         sys.exit(1)
-    
+
     try:
         # Step 2: Run CodeQL queries
         logger.info("\n[2/4] Running CodeQL Queries")
@@ -129,7 +148,7 @@ See README.md for configuration reference.
         logger.error("❌ CodeQL error: %s", e)
         _log_exception_cause(e)
         sys.exit(1)
-    
+
     try:
         # Step 3: Classify results with LLM
         logger.info("\n[3/4] Classifying Results with LLM")
@@ -139,12 +158,16 @@ See README.md for configuration reference.
     except LLMConfigError as e:
         logger.error("❌ LLM configuration error: %s", e)
         _log_exception_cause(e)
-        logger.error("   Please check your LLM configuration and API credentials in .env file.")
+        logger.error(
+            "   Please check your LLM configuration and API credentials in .env file."
+        )
         sys.exit(1)
     except LLMApiError as e:
         logger.error("❌ LLM API error: %s", e)
         _log_exception_cause(e)
-        logger.error("   Please check your API key, network connection, and rate limits.")
+        logger.error(
+            "   Please check your API key, network connection, and rate limits."
+        )
         sys.exit(1)
     except LLMError as e:
         logger.error("❌ LLM error: %s", e)
@@ -153,16 +176,20 @@ See README.md for configuration reference.
     except CodeQLError as e:
         logger.error("❌ CodeQL error while reading database files: %s", e)
         _log_exception_cause(e)
-        logger.error("   This step reads CodeQL database files (YAML, ZIP, CSV) to prepare data for LLM analysis.")
+        logger.error(
+            "   This step reads CodeQL database files (YAML, ZIP, CSV) to prepare data for LLM analysis."
+        )
         logger.error("   Please check your CodeQL databases and files are accessible.")
         sys.exit(1)
     except VulnhallaError as e:
         logger.error("❌ File system error while saving results: %s", e)
         _log_exception_cause(e)
-        logger.error("   This step writes analysis results to disk and creates output directories.")
+        logger.error(
+            "   This step writes analysis results to disk and creates output directories."
+        )
         logger.error("   Please check file permissions and disk space.")
         sys.exit(1)
-    
+
     # Step 4: Open UI
     if open_ui:
         logger.info("\n[4/4] Opening UI")
@@ -187,18 +214,19 @@ def main_analyze() -> None:
         "repo",
         nargs="?",
         help="Optional GitHub repository name (e.g., 'redis/redis'). If not provided, fetches top 100 repos of the language.",
-        default=None
+        default=None,
     )
     parser.add_argument(
-        "-l", "--language",
+        "-l",
+        "--language",
         help="Programming language to analyze (default: c).",
         default="c",
-        choices=SUPPORTED_LANGUAGES
+        choices=SUPPORTED_LANGUAGES,
     )
     parser.add_argument(
         "--local-repo-folder",
         help="Path to a local folder containing repositories to be used as a fallback if remote download fails.",
-        default=None
+        default=None,
     )
 
     args = parser.parse_args()
@@ -210,8 +238,10 @@ def main_analyze() -> None:
         logger.error("   Or run without arguments to analyze top repositories")
         sys.exit(1)
 
-    analyze_pipeline(repo=repo, lang=args.language, local_repo_folder=args.local_repo_folder)
+    analyze_pipeline(
+        repo=repo, lang=args.language, local_repo_folder=args.local_repo_folder
+    )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main_analyze()

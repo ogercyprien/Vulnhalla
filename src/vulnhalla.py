@@ -21,7 +21,7 @@ from src.utils.common_functions import (
     read_file_lines_from_zip,
     read_file as read_file_utf8,
     write_file_ascii,
-    read_yml
+    read_yml,
 )
 
 # Script that holds your GPT logic
@@ -39,7 +39,9 @@ class IssueAnalyzer:
     and forwards them to an LLM (via llm_analyzer) for triage.
     """
 
-    def __init__(self, lang: str = "c", config: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(
+        self, lang: str = "c", config: Optional[Dict[str, Any]] = None
+    ) -> None:
         """
         Initialize the IssueAnalyzer with default parameters.
 
@@ -66,14 +68,20 @@ class IssueAnalyzer:
 
         Returns:
             List[Dict[str, str]]: A list of issue objects parsed from CSV rows.
-        
+
         Raises:
             CodeQLError: If file cannot be read (not found, permission denied, etc.).
         """
         field_names = [
-            "name", "help", "type", "message",
-            "file", "start_line", "start_offset",
-            "end_line", "end_offset"
+            "name",
+            "help",
+            "type",
+            "message",
+            "file",
+            "start_line",
+            "start_offset",
+            "end_line",
+            "end_offset",
         ]
         issues = []
         try:
@@ -84,12 +92,16 @@ class IssueAnalyzer:
         except FileNotFoundError as e:
             raise CodeQLError(f"Issues CSV file not found: {file_name}") from e
         except PermissionError as e:
-            raise CodeQLError(f"Permission denied reading issues CSV: {file_name}") from e
+            raise CodeQLError(
+                f"Permission denied reading issues CSV: {file_name}"
+            ) from e
         except OSError as e:
             raise CodeQLError(f"OS error while reading issues CSV: {file_name}") from e
         return issues
 
-    def collect_issues_from_databases(self, dbs_folder: str) -> Dict[str, List[Dict[str, str]]]:
+    def collect_issues_from_databases(
+        self, dbs_folder: str
+    ) -> Dict[str, List[Dict[str, str]]]:
         """
         Searches through all CodeQL databases in `dbs_folder`, collects issues
         from each DB, and groups them by issue name.
@@ -99,7 +111,7 @@ class IssueAnalyzer:
 
         Returns:
             Dict[str, List[Dict[str, str]]]: All issues, grouped by issue name.
-        
+
         Raises:
             CodeQLError: If database folder cannot be accessed or issues cannot be read.
         """
@@ -129,7 +141,9 @@ class IssueAnalyzer:
     # 2. Function and Snippet Extraction
     # ----------------------------------------------------------------------
 
-    def find_function_by_line(self, function_tree_file: str, file_path: str, line: int) -> Optional[Dict[str, str]]:
+    def find_function_by_line(
+        self, function_tree_file: str, file_path: str, line: int
+    ) -> Optional[Dict[str, str]]:
         """
         Finds the most specific (smallest) function in the function tree file that includes the given file and line number.
 
@@ -140,13 +154,20 @@ class IssueAnalyzer:
 
         Returns:
             Optional[Dict[str, str]]: The best matching function dictionary, or None if not found.
-        
+
         Raises:
             CodeQLError: If function tree file cannot be read (not found, permission denied, etc.).
         """
-        keys = ["function_name", "file", "start_line", "function_id", "end_line", "caller_id"]
+        keys = [
+            "function_name",
+            "file",
+            "start_line",
+            "function_id",
+            "end_line",
+            "caller_id",
+        ]
         best_function = None
-        smallest_range = float('inf')
+        smallest_range = float("inf")
 
         # Normalize target path for comparison (remove leading slash for consistency)
         target_path_suffix = file_path.strip("/")
@@ -168,11 +189,19 @@ class IssueAnalyzer:
                             continue  # Skip if lines aren't integers
 
                         # Check if one path ends with the other
-                        csv_file = function["file"].replace('"', '').strip("/")
+                        csv_file = function["file"].replace('"', "").strip("/")
 
-                        is_path_match = (csv_file == target_path_suffix) or \
-                                      (len(csv_file) > len(target_path_suffix) and csv_file.endswith(target_path_suffix)) or \
-                                      (len(target_path_suffix) > len(csv_file) and target_path_suffix.endswith(csv_file))
+                        is_path_match = (
+                            (csv_file == target_path_suffix)
+                            or (
+                                len(csv_file) > len(target_path_suffix)
+                                and csv_file.endswith(target_path_suffix)
+                            )
+                            or (
+                                len(target_path_suffix) > len(csv_file)
+                                and target_path_suffix.endswith(csv_file)
+                            )
+                        )
 
                         if is_path_match:
                             if start_line <= line <= end_line:
@@ -181,15 +210,23 @@ class IssueAnalyzer:
                                     best_function = function
                                     smallest_range = size
         except FileNotFoundError as e:
-            raise CodeQLError(f"Function tree file not found: {function_tree_file}") from e
+            raise CodeQLError(
+                f"Function tree file not found: {function_tree_file}"
+            ) from e
         except PermissionError as e:
-            raise CodeQLError(f"Permission denied reading function tree file: {function_tree_file}") from e
+            raise CodeQLError(
+                f"Permission denied reading function tree file: {function_tree_file}"
+            ) from e
         except OSError as e:
-            raise CodeQLError(f"OS error while reading function tree file: {function_tree_file}") from e
+            raise CodeQLError(
+                f"OS error while reading function tree file: {function_tree_file}"
+            ) from e
 
         return best_function
 
-    def extract_function_code(self, code_file: List[str], function_dict: Dict[str, str]) -> str:
+    def extract_function_code(
+        self, code_file: List[str], function_dict: Dict[str, str]
+    ) -> str:
         """
         Produces lines of the function's code from a list of lines.
 
@@ -216,9 +253,7 @@ class IssueAnalyzer:
     # ----------------------------------------------------------------------
 
     def create_bracket_reference_replacer(
-        self,
-        db_path: str,
-        code_path: str
+        self, db_path: str, code_path: str
     ) -> Callable[[re.Match], str]:
         """
         Creates and returns a 'replacement' callback function that can be used with
@@ -231,10 +266,11 @@ class IssueAnalyzer:
 
         Returns:
             Callable[[re.Match], str]: A function that can be used with `re.sub`.
-        
+
         Note:
             The returned callback function may raise `CodeQLError` if ZIP file cannot be read.
         """
+
         def replacement(match):
             variable = match.group(1)
             path_type = match.group(2)
@@ -256,16 +292,17 @@ class IssueAnalyzer:
                 full_path = clean_path
 
             code_text = read_file_lines_from_zip(
-                os.path.join(db_path, "src.zip"),
-                full_path
+                os.path.join(db_path, "src.zip"), full_path
             )
             code_lines = code_text.split("\n")
             # Handle potential line number out of bounds
             line_idx = int(line_number) - 1
             if 0 <= line_idx < len(code_lines):
-                snippet = code_lines[line_idx][int(start_offset) - 1:int(end_offset)]
+                snippet = code_lines[line_idx][int(start_offset) - 1: int(end_offset)]
             else:
-                snippet = code_lines[int(line_number) - 1][int(start_offset) - 1:int(end_offset)]
+                snippet = code_lines[int(line_number) - 1][
+                    int(start_offset) - 1: int(end_offset)
+                ]
 
             file_name = os.path.split(file_path)[1]
             return f"{variable} '{snippet}' ({file_name}:{int(line_number)})"
@@ -273,11 +310,7 @@ class IssueAnalyzer:
         return replacement
 
     def build_prompt_by_template(
-        self,
-        issue: Dict[str, str],
-        message: str,
-        snippet: str,
-        code: str
+        self, issue: Dict[str, str], message: str, snippet: str, code: str
     ) -> str:
         """
         Builds the final 'prompt' template to feed into an LLM, combining
@@ -291,7 +324,7 @@ class IssueAnalyzer:
 
         Returns:
             str: A final prompt string with the template + hints + snippet + code.
-        
+
         Raises:
             VulnhallaError: If template files cannot be read (not found, permission denied, etc.).
         """
@@ -299,7 +332,9 @@ class IssueAnalyzer:
         lang_folder = "cpp" if self.lang == "c" else self.lang
 
         # Try to read an existing template specific to the issue name
-        hints_path = os.path.join("data/templates", lang_folder, issue["name"] + ".template")
+        hints_path = os.path.join(
+            "data/templates", lang_folder, issue["name"] + ".template"
+        )
         if not os.path.exists(hints_path):
             hints_path = os.path.join("data/templates", lang_folder, "general.template")
 
@@ -310,8 +345,10 @@ class IssueAnalyzer:
         template = read_file_utf8(template_path)
 
         location = "look at {file_line} with '{snippet}'".format(
-            file_line=os.path.split(issue["file"])[1] + ":" + str(int(issue["start_line"]) - 1),
-            snippet=snippet
+            file_line=os.path.split(issue["file"])[1]
+            + ":"
+            + str(int(issue["start_line"]) - 1),
+            snippet=snippet,
         )
 
         # Special case for "Use of object after its lifetime has ended"
@@ -324,7 +361,7 @@ class IssueAnalyzer:
             message=message,
             location=location,
             hints=hints,
-            code=code
+            code=code,
         )
         return prompt
 
@@ -338,7 +375,7 @@ class IssueAnalyzer:
 
         Args:
             dirs (List[str]): A list of directory paths to create if missing.
-        
+
         Raises:
             VulnhallaError: If directory creation fails (permission denied, etc.).
         """
@@ -347,10 +384,11 @@ class IssueAnalyzer:
                 try:
                     os.makedirs(d, exist_ok=True)
                 except PermissionError as e:
-                    raise VulnhallaError(f"Permission denied creating directory: {d}") from e
+                    raise VulnhallaError(
+                        f"Permission denied creating directory: {d}"
+                    ) from e
                 except OSError as e:
                     raise VulnhallaError(f"OS error creating directory: {d}") from e
-
 
     # ----------------------------------------------------------------------
     # 5. Main Analysis Routine
@@ -362,7 +400,7 @@ class IssueAnalyzer:
         function_tree_file: str,
         current_function: Dict[str, str],
         results_folder: str,
-        issue_id: int
+        issue_id: int,
     ) -> None:
         """
         Saves the raw input data (prompt, function tree info, etc.) to a JSON file before
@@ -374,17 +412,20 @@ class IssueAnalyzer:
             current_function (Dict[str, str]): The currently found function dict.
             results_folder (str): Folder path where we store the result files.
             issue_id (int): The numeric ID of the current issue.
-        
+
         Raises:
             VulnhallaError: If file cannot be written (permission denied, etc.).
         """
-        raw_data = json.dumps({
-            "function_tree_file": function_tree_file,
-            "current_function": current_function,
-            "db_path": self.db_path,
-            "code_path": self.code_path,
-            "prompt": prompt
-        }, ensure_ascii=False)
+        raw_data = json.dumps(
+            {
+                "function_tree_file": function_tree_file,
+                "current_function": current_function,
+                "db_path": self.db_path,
+                "code_path": self.code_path,
+                "prompt": prompt,
+            },
+            ensure_ascii=False,
+        )
 
         raw_output_file = os.path.join(results_folder, f"{issue_id}_raw.json")
         write_file_ascii(raw_output_file, raw_data)
@@ -400,9 +441,15 @@ class IssueAnalyzer:
         Returns:
             str: A string representation of LLM messages (somewhat JSON-formatted).
         """
-        gpt_result = "[\n    " + ",\n    ".join(
-            f"'''{item}'''" if "\n" in item else repr(item) for item in messages).replace("\\n", "\n    ").replace(
-            "\\t", " ") + "\n]"
+        gpt_result = (
+            "[\n    "
+            + ",\n    ".join(
+                f"'''{item}'''" if "\n" in item else repr(item) for item in messages
+            )
+            .replace("\\n", "\n    ")
+            .replace("\\t", " ")
+            + "\n]"
+        )
         return gpt_result
 
     def determine_issue_status(self, llm_content: str) -> str:
@@ -430,7 +477,7 @@ class IssueAnalyzer:
         function_tree_file: str,
         src_zip_path: str,
         code: str,
-        current_function: Dict[str, str]
+        current_function: Dict[str, str],
     ) -> Tuple[str, List[Dict[str, str]]]:
         """
         Searches for additional functions (via bracket references) outside the current one
@@ -445,7 +492,7 @@ class IssueAnalyzer:
 
         Returns:
             str: The extended code snippet, possibly including multiple functions.
-        
+
         Raises:
             CodeQLError: If function tree file or ZIP file cannot be read.
         """
@@ -469,13 +516,19 @@ class IssueAnalyzer:
                 continue
 
             # Attempt to find the new function
-            new_function = self.find_function_by_line(function_tree_file, "/" + file_ref_final, int(line_ref))
+            new_function = self.find_function_by_line(
+                function_tree_file, "/" + file_ref_final, int(line_ref)
+            )
             if new_function and new_function not in functions:
                 functions.append(new_function)
-                code_file2 = read_file_lines_from_zip(src_zip_path, file_ref_final).split("\n")
+                code_file2 = read_file_lines_from_zip(
+                    src_zip_path, file_ref_final
+                ).split("\n")
                 code += (
-                    "\n\nfile: " + file_ref_final + "\n" +
-                    self.extract_function_code(code_file2, new_function)
+                    "\n\nfile: "
+                    + file_ref_final
+                    + "\n"
+                    + self.extract_function_code(code_file2, new_function)
                 )
 
         return code, functions
@@ -484,7 +537,7 @@ class IssueAnalyzer:
         self,
         issue_type: str,
         issues_of_type: List[Dict[str, str]],
-        llm_analyzer: LLMAnalyzer
+        llm_analyzer: LLMAnalyzer,
     ) -> None:
         """
         Processes all issues of a single type. Builds file/folder paths, runs
@@ -494,13 +547,15 @@ class IssueAnalyzer:
             issue_type (str): The name of the issue type.
             issues_of_type (List[Dict[str, str]]): All issues belonging to that type.
             llm_analyzer (LLMAnalyzer): The LLM analyzer instance to use for queries.
-        
+
         Raises:
             CodeQLError: If database files cannot be read (YAML, ZIP, CSV, etc.).
             VulnhallaError: If result files cannot be written.
             LLMError: If LLM analysis fails.
         """
-        results_folder = os.path.join("output/results", self.lang, issue_type.replace(" ", "_").replace("/", "-"))
+        results_folder = os.path.join(
+            "output/results", self.lang, issue_type.replace(" ", "_").replace("/", "-")
+        )
         self.ensure_directories_exist([results_folder])
 
         issue_id = 0
@@ -519,11 +574,11 @@ class IssueAnalyzer:
 
             # Only apply C++ style adjustment if it looks like a virtual absolute path
             if self.lang == "c" and ":" in self.code_path:
-                 if ":" in self.code_path:
-                     self.code_path = self.code_path.replace(":", "_").replace("\\", "/")
-                 elif self.code_path.startswith("/"):
-                     self.code_path = self.code_path[1:]
-            
+                if ":" in self.code_path:
+                    self.code_path = self.code_path.replace(":", "_").replace("\\", "/")
+                elif self.code_path.startswith("/"):
+                    self.code_path = self.code_path[1:]
+
             # For Python, paths are often just relative, so we might not need adjustment
             # but ensure we don't end up with "//"
             if self.code_path and not self.code_path.endswith("/"):
@@ -538,7 +593,7 @@ class IssueAnalyzer:
             search_path_normalized = raw_search_path.replace("//", "/")
 
             # Normalize the zip path for file extraction
-            # Zip files store paths relative to the zip root (e.g. 'repos/...') 
+            # Zip files store paths relative to the zip root (e.g. 'repos/...')
             # but CodeQL DBs store them as absolute ('/repos/...').
             # Strip leading/trailing slashes from base path
             clean_base = self.code_path.strip("/")
@@ -558,48 +613,68 @@ class IssueAnalyzer:
                     code_text = read_file_lines_from_zip(src_zip_path, clean_file)
                     full_file_path = clean_file
                 except CodeQLError:
-                     logger.warning(f"Could not find file in zip. Tried '{full_file_path}' and '{clean_file}'")
-                     continue
+                    logger.warning(
+                        f"Could not find file in zip. Tried '{full_file_path}' and '{clean_file}'"
+                    )
+                    continue
 
             code_file_contents = code_text.split("\n")
 
             current_function = self.find_function_by_line(
-                function_tree_file,
-                search_path_normalized,
-                int(issue["start_line"])
+                function_tree_file, search_path_normalized, int(issue["start_line"])
             )
             if not current_function:
-                logger.warning("issue %s: Can't find the function or function is too big!", issue_id)
+                logger.warning(
+                    "issue %s: Can't find the function or function is too big!",
+                    issue_id,
+                )
                 continue
 
             snippet = code_file_contents[int(issue["start_line"]) - 1][
-                int(issue["start_offset"]) - 1:int(issue["end_offset"])
+                int(issue["start_offset"]) - 1: int(issue["end_offset"])
             ]
 
             code = (
-                "file: " + self.code_path + issue["file"] + "\n" +
-                self.extract_function_code(code_file_contents, current_function)
+                "file: "
+                + self.code_path
+                + issue["file"]
+                + "\n"
+                + self.extract_function_code(code_file_contents, current_function)
             )
 
             # Replace bracket references in the issue message
             bracket_pattern = r'\[\["(.*?)"\|"((?:relative://|file://))?(/.*?):(\d+):(\d+):\d+:(\d+)"\]\]'
-            transform_func = self.create_bracket_reference_replacer(self.db_path, self.code_path)
+            transform_func = self.create_bracket_reference_replacer(
+                self.db_path, self.code_path
+            )
             message = re.sub(bracket_pattern, transform_func, issue["message"])
 
             # Also check for lines referencing other code blocks
-            extra_lines_pattern = r'\[\[".*?"\|"((?:relative://|file://)?)(/.*?):(\d+):\d+:\d+:\d+"\]\]'
+            extra_lines_pattern = (
+                r'\[\[".*?"\|"((?:relative://|file://)?)(/.*?):(\d+):\d+:\d+:\d+"\]\]'
+            )
             extra_lines = re.findall(extra_lines_pattern, issue["message"])
             functions = [current_function]
 
             if extra_lines:
                 code, functions = self.append_extra_functions(
-                    extra_lines, function_tree_file, src_zip_path, code, current_function
+                    extra_lines,
+                    function_tree_file,
+                    src_zip_path,
+                    code,
+                    current_function,
                 )
 
             prompt = self.build_prompt_by_template(issue, message, snippet, code)
 
             # Save raw input to the LLM
-            self.save_raw_input_data(prompt, function_tree_file, current_function, results_folder, issue_id)
+            self.save_raw_input_data(
+                prompt,
+                function_tree_file,
+                current_function,
+                results_folder,
+                issue_id
+            )
 
             # Send to LLM
             messages, content = llm_analyzer.run_llm_security_analysis(
@@ -644,7 +719,7 @@ class IssueAnalyzer:
         3. Parses each DB's issues.csv, aggregates them by issue type.
         4. Asks the LLM for each issue's snippet context, saving final results
            in various directory structures.
-        
+
         Raises:
             CodeQLError: If database files cannot be accessed or read.
             VulnhallaError: If directory creation or file writing fails.
@@ -653,7 +728,7 @@ class IssueAnalyzer:
         # Validate configuration before starting
         if self.config is None:
             validate_and_exit_on_error()
-        
+
         llm_analyzer = LLMAnalyzer()
         llm_analyzer.init_llm_client(config=self.config)
 
@@ -670,15 +745,18 @@ class IssueAnalyzer:
 
         # Process all issues, type by type
         for issue_type in issues_statistics.keys():
-            self.process_issue_type(issue_type, issues_statistics[issue_type], llm_analyzer)
+            self.process_issue_type(
+                issue_type, issues_statistics[issue_type], llm_analyzer
+            )
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     # Initialize logging
     from src.utils.logger import setup_logging
+
     setup_logging()
-    
+
     # Loads configuration from .env file
     # Or use: analyzer = IssueAnalyzer(lang="c", config={...})
     analyzer = IssueAnalyzer(lang="c")
     analyzer.run()
-

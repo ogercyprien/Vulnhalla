@@ -25,7 +25,7 @@ from typing import Any, Dict, List
 from pySmartDL import SmartDL
 
 # Import from your local common_functions where needed
-from src.utils.common_functions import read_file, write_file_text
+from src.utils.common_functions import write_file_text
 from src.utils.config import get_github_token, get_codeql_path, SUPPORTED_LANGUAGES
 from src.utils.logger import get_logger
 from src.utils.exceptions import CodeQLError, CodeQLConfigError
@@ -78,7 +78,9 @@ def clone_repo(repo_name: str, target_dir: str) -> None:
         try:
             shutil.rmtree(target_dir)
         except OSError as e:
-            raise CodeQLError(f"Failed to remove existing directory {target_dir}: {e}") from e
+            raise CodeQLError(
+                f"Failed to remove existing directory {target_dir}: {e}"
+            ) from e
 
     try:
         run_command(["git", "clone", "--depth", "1", repo_url, target_dir])
@@ -103,7 +105,9 @@ def create_database(source_root: str, db_path: str, lang: str) -> None:
         try:
             shutil.rmtree(db_path)
         except OSError as e:
-            raise CodeQLError(f"Failed to remove existing database at {db_path}: {e}") from e
+            raise CodeQLError(
+                f"Failed to remove existing database at {db_path}: {e}"
+            ) from e
 
     cmd = [
         codeql_bin,
@@ -111,20 +115,21 @@ def create_database(source_root: str, db_path: str, lang: str) -> None:
         "create",
         db_path,
         f"--language={lang}",
-        "--overwrite"
+        "--overwrite",
     ]
 
     # Python/JS/Ruby don't need build commands, so we define source-root
     if lang in ["python", "javascript", "ruby"]:
         cmd.extend(["--source-root", source_root])
-    # C/C++/Java/Go need a build. By omitting --source-root, 
+    # C/C++/Java/Go need a build. By omitting --source-root,
     # CodeQL will attempt "autobuild" in the cwd.
     else:
-        logger.warning(f"Attempting autobuild for {lang}. This may fail if dependencies are missing.")
+        logger.warning(
+            f"Attempting autobuild for {lang}. This may fail if dependencies are missing."
+        )
 
     run_command(cmd, cwd=source_root)
     logger.info("✅ Database created successfully at %s", db_path)
-
 
 
 def fetch_repos_from_github_api(url: str) -> Dict[str, Any]:
@@ -136,7 +141,7 @@ def fetch_repos_from_github_api(url: str) -> Dict[str, Any]:
 
     Returns:
         Dict[str, Any]: JSON response from the GitHub API as a Python dict.
-    
+
     Raises:
         CodeQLConfigError: On 4xx client errors (invalid token, permissions, etc.).
         CodeQLError: On server errors or other unexpected errors.
@@ -165,7 +170,7 @@ def fetch_repos_from_github_api(url: str) -> Dict[str, Any]:
                 raise CodeQLConfigError(error_msg) from http_err
             # CodeQLError
             raise CodeQLError(f"GitHub API returned {status} for {url}") from http_err
-        
+
         remaining_requests = response.headers.get("X-RateLimit-Remaining")
         reset_time = response.headers.get("X-RateLimit-Reset")
 
@@ -178,13 +183,16 @@ def fetch_repos_from_github_api(url: str) -> Dict[str, Any]:
             )
             wait_time = int(reset_time) - int(time.time())
             if wait_time > 0:
-                logger.warning("Waiting for %.2f minutes until the rate limit resets.", wait_time / 60)
+                logger.warning(
+                    "Waiting for %.2f minutes until the rate limit resets.",
+                    wait_time / 60,
+                )
                 time.sleep(wait_time + 1)
             if int(remaining_requests) == 0:
                 return fetch_repos_from_github_api(url)
 
         return response.json()
-    
+
     except CodeQLConfigError:
         raise
     except requests.RequestException as e:
@@ -204,7 +212,7 @@ def parse_github_search_result(url: str) -> List[Dict[str, Any]]:
 
     Returns:
         List[Dict[str, Any]]: A list of repository metadata dictionaries.
-    
+
     Raises:
         CodeQLConfigError: If GitHub API returns 4xx (invalid token, permissions, etc.).
         CodeQLError: If GitHub API returns 5xx or other errors.
@@ -231,7 +239,7 @@ def validate_rate_limit(threads: int) -> None:
     Args:
         threads (int): Number of download threads planned; used to estimate
             how many requests might be made.
-    
+
     Raises:
         CodeQLError: If network error occurs while checking rate limit.
     """
@@ -241,7 +249,7 @@ def validate_rate_limit(threads: int) -> None:
         raise CodeQLError(f"Network error while checking GitHub rate limit: {e}") from e
     except (ValueError, json.JSONDecodeError) as e:
         raise CodeQLError(f"Invalid response from GitHub rate limit API: {e}") from e
-    
+
     remaining_requests = rate_limit["resources"]["core"]["remaining"]
     reset_time = rate_limit["resources"]["core"]["reset"]
     if int(remaining_requests) < threads + 3:
@@ -252,11 +260,19 @@ def validate_rate_limit(threads: int) -> None:
         )
         wait_time = int(reset_time) - int(time.time()) + 120
         if wait_time > 0:
-            logger.warning("Waiting for %.2f minutes until the rate limit resets.", wait_time / 60)
+            logger.warning(
+                "Waiting for %.2f minutes until the rate limit resets.", wait_time / 60
+            )
             time.sleep(wait_time)
 
 
-def custom_download(url: str, local_filename: str, max_attempts: int = 5, attempt: int = 1, force_full_download: bool = False) -> None:
+def custom_download(
+    url: str,
+    local_filename: str,
+    max_attempts: int = 5,
+    attempt: int = 1,
+    force_full_download: bool = False,
+) -> None:
     """
     Download a file from GitHub (with optional resume and retry logic).
 
@@ -266,7 +282,7 @@ def custom_download(url: str, local_filename: str, max_attempts: int = 5, attemp
         max_attempts: Maximum number of retry attempts.
         attempt: Current attempt (used internally).
         force_full_download: If True, download from beginning even if file exists (skip Range header).
-    
+
     Raises:
         CodeQLError: If download fails after all retry attempts, or on non-retryable errors.
         CodeQLConfigError: On 4xx client errors that indicate configuration issues (e.g., invalid token).
@@ -275,7 +291,7 @@ def custom_download(url: str, local_filename: str, max_attempts: int = 5, attemp
     file_size = 0
     if os.path.exists(local_filename) and not force_full_download:
         file_size = os.path.getsize(local_filename)
-        
+
         # Validate if existing file is a valid ZIP
         if file_size > 0:
             try:
@@ -283,12 +299,17 @@ def custom_download(url: str, local_filename: str, max_attempts: int = 5, attemp
                     zip_ref.testzip()  # Test if ZIP is valid
             except (zipfile.BadZipFile, zipfile.LargeZipFile):
                 # File is corrupted, delete it and start again
-                logger.warning("Existing file %s is corrupted. Deleting and starting fresh.", local_filename)
+                logger.warning(
+                    "Existing file %s is corrupted. Deleting and starting fresh.",
+                    local_filename,
+                )
                 try:
                     os.remove(local_filename)
                     file_size = 0
                 except (PermissionError, OSError) as e:
-                    raise CodeQLError(f"Failed to delete corrupted file {local_filename}: {e}") from e
+                    raise CodeQLError(
+                        f"Failed to delete corrupted file {local_filename}: {e}"
+                    ) from e
 
     # Set up headers
     headers = {"Accept": "application/zip"}
@@ -305,27 +326,38 @@ def custom_download(url: str, local_filename: str, max_attempts: int = 5, attemp
             # Check for 416 Range Not Satisfiable error
             status = response.status_code
             if status == 416:
-                logger.warning("Received 416 error (Range Not Satisfiable) - file may have changed on server")
+                logger.warning(
+                    "Received 416 error (Range Not Satisfiable) - file may have changed on server"
+                )
                 logger.info("Will retry download from beginning (full download)")
-                
+
                 # Retry from beginning with force_full_download=True to skip Range header
                 if attempt < max_attempts:
                     backoff_time = min(2 ** attempt, 60)
-                    logger.info("Retrying download from beginning in %.1f seconds...", backoff_time)
+                    logger.info(
+                        "Retrying download from beginning in %.1f seconds...",
+                        backoff_time,
+                    )
                     time.sleep(backoff_time)
-                    return custom_download(url, local_filename, max_attempts, attempt + 1, force_full_download=True)
+                    return custom_download(
+                        url,
+                        local_filename,
+                        max_attempts,
+                        attempt + 1,
+                        force_full_download=True,
+                    )
                 else:
                     raise CodeQLError(
                         f"Failed to download {url} after {max_attempts} attempts. "
                         "416 error suggests file on server may have changed."
                     )
-            
+
             # HTTP errors handling
             try:
                 response.raise_for_status()
             except requests.HTTPError as http_err:
                 status = http_err.response.status_code if http_err.response else None
-                # Request/config problem 
+                # Request/config problem
                 if status is not None and 400 <= status < 500:
                     raise CodeQLConfigError(
                         f"GitHub returned {status} while downloading {url}. "
@@ -335,7 +367,9 @@ def custom_download(url: str, local_filename: str, max_attempts: int = 5, attemp
                 raise
 
             total_size = int(response.headers.get("content-length", 0)) + file_size
-            logger.debug("File size: %d bytes (%.2f MB)", total_size, total_size / 1_000_000)
+            logger.debug(
+                "File size: %d bytes (%.2f MB)", total_size, total_size / 1_000_000
+            )
 
             mode = "ab" if (file_size > 0 and not force_full_download) else "wb"
             with open(local_filename, mode) as file:
@@ -350,8 +384,15 @@ def custom_download(url: str, local_filename: str, max_attempts: int = 5, attemp
                     downloaded_size += len(chunk)
 
                     current_time = time.time()
-                    if current_time - last_update >= 0.1 or downloaded_size == total_size:
-                        progress = (downloaded_size / total_size) * 100 if total_size > 0 else 0
+                    if (
+                        current_time - last_update >= 0.1
+                        or downloaded_size == total_size
+                    ):
+                        progress = (
+                            (downloaded_size / total_size) * 100
+                            if total_size > 0
+                            else 0
+                        )
                         elapsed = current_time - start_time
                         speed = downloaded_size / elapsed if elapsed > 0 else 0
 
@@ -380,9 +421,11 @@ def custom_download(url: str, local_filename: str, max_attempts: int = 5, attemp
     except requests.RequestException as e:
         # Network errors
         if attempt >= max_attempts:
-            raise CodeQLError(f"Failed to download {url} after {max_attempts} attempts") from e
+            raise CodeQLError(
+                f"Failed to download {url} after {max_attempts} attempts"
+            ) from e
 
-        backoff_time = min(2 ** attempt, 60)
+        backoff_time = min(2**attempt, 60)
         logger.warning(
             "Network error during download (attempt %d/%d): %s. Retrying in %.1f seconds...",
             attempt,
@@ -400,14 +443,18 @@ def custom_download(url: str, local_filename: str, max_attempts: int = 5, attemp
 
     except (IOError, OSError) as e:
         # Disk write errors
-        raise CodeQLError(f"Failed to write downloaded content to {local_filename}: {e}") from e
+        raise CodeQLError(
+            f"Failed to write downloaded content to {local_filename}: {e}"
+        ) from e
     except CodeQLConfigError:
         raise
     except Exception as e:
         raise CodeQLError(f"Unexpected error during download of {url}: {e}") from e
 
 
-def multi_thread_db_download(url: str, repo_name: str, lang: str = "c", threads: int = 2) -> str:
+def multi_thread_db_download(
+    url: str, repo_name: str, lang: str = "c", threads: int = 2
+) -> str:
     """
     Download a CodeQL DB .zip file with multiple threads (if no token),
     or via custom_download (if using a token).
@@ -420,7 +467,7 @@ def multi_thread_db_download(url: str, repo_name: str, lang: str = "c", threads:
 
     Returns:
         str: The local file system path to the downloaded .zip.
-    
+
     Raises:
         CodeQLError: If directory creation fails or download fails.
         CodeQLConfigError: On 4xx client errors during download (if using token).
@@ -429,7 +476,9 @@ def multi_thread_db_download(url: str, repo_name: str, lang: str = "c", threads:
     try:
         os.makedirs(dest_dir, exist_ok=True)
     except PermissionError as e:
-        raise CodeQLError(f"Permission denied creating download directory: {dest_dir}") from e
+        raise CodeQLError(
+            f"Permission denied creating download directory: {dest_dir}"
+        ) from e
     except OSError as e:
         raise CodeQLError(f"OS error creating download directory: {dest_dir}") from e
     dest = os.path.join(dest_dir, repo_name + ".zip")
@@ -443,7 +492,12 @@ def multi_thread_db_download(url: str, repo_name: str, lang: str = "c", threads:
 
     validate_rate_limit(threads)
     downloader = SmartDL(
-        url, dest, request_args=request_args, threads=threads, progress_bar=False, verify=False
+        url,
+        dest,
+        request_args=request_args,
+        threads=threads,
+        progress_bar=False,
+        verify=False,
     )
     downloader.start()
     return downloader.get_dest()
@@ -456,17 +510,21 @@ def unzip_file(zip_path: str, extract_to: str) -> None:
     Args:
         zip_path (str): The path to the .zip file.
         extract_to (str): Directory path where files will be extracted.
-    
+
     Raises:
         CodeQLError: If ZIP file is invalid, corrupted, or extraction fails.
     """
     try:
         os.makedirs(extract_to, exist_ok=True)
     except PermissionError as e:
-        raise CodeQLError(f"Permission denied creating extraction directory: {extract_to}") from e
+        raise CodeQLError(
+            f"Permission denied creating extraction directory: {extract_to}"
+        ) from e
     except OSError as e:
-        raise CodeQLError(f"OS error creating extraction directory: {extract_to}") from e
-    
+        raise CodeQLError(
+            f"OS error creating extraction directory: {extract_to}"
+        ) from e
+
     try:
         with zipfile.ZipFile(zip_path, "r") as zip_ref:
             zip_ref.extractall(extract_to)
@@ -480,7 +538,9 @@ def unzip_file(zip_path: str, extract_to: str) -> None:
         raise CodeQLError(f"OS error extracting ZIP file: {zip_path}") from e
 
 
-def filter_repos_by_db_and_lang(repos: List[Dict[str, Any]], lang: str) -> List[Dict[str, Any]]:
+def filter_repos_by_db_and_lang(
+    repos: List[Dict[str, Any]], lang: str
+) -> List[Dict[str, Any]]:
     """
     For each repo, fetch available CodeQL databases from the GitHub API.
 
@@ -491,7 +551,7 @@ def filter_repos_by_db_and_lang(repos: List[Dict[str, Any]], lang: str) -> List[
     Returns:
         List[Dict[str, Any]]: A list of dictionaries containing DB info
             for the matching language.
-    
+
     Raises:
         CodeQLConfigError: If GitHub API returns 4xx (invalid token, permissions, etc.).
         CodeQLError: If GitHub API returns 5xx or other errors.
@@ -508,13 +568,17 @@ def filter_repos_by_db_and_lang(repos: List[Dict[str, Any]], lang: str) -> List[
         except (CodeQLConfigError, CodeQLError):
             raise
         except Exception as e:
-            raise CodeQLError(f"Unexpected error while fetching databases for {repo['repo_name']}: {e}") from e
-        
+            raise CodeQLError(
+                f"Unexpected error while fetching databases for {repo['repo_name']}: {e}"
+            ) from e
+
         # db_info might be a list or empty list
         if not isinstance(db_info, list):
             # Check if it's an error response from GitHub API
             if isinstance(db_info, dict):
-                error_msg = db_info.get("message") or db_info.get("error", "Unknown error")
+                error_msg = db_info.get("message") or db_info.get(
+                    "error", "Unknown error"
+                )
                 if "message" in db_info or "error" in db_info:
                     raise CodeQLError(
                         f"GitHub API error for {repo['repo_name']}: {error_msg}"
@@ -522,17 +586,20 @@ def filter_repos_by_db_and_lang(repos: List[Dict[str, Any]], lang: str) -> List[
             # If it's not a dict with error, log warning and continue
             logger.warning(
                 "Unexpected response format for %s databases: %s (type: %s)",
-                repo['repo_name'],
+                repo["repo_name"],
                 db_info,
-                type(db_info).__name__
+                type(db_info).__name__,
             )
             continue
-            
+
         for db in db_info:
             if "language" in db and db["language"] == gh_lang:
                 # Validate required fields exist
                 if "url" not in db:
-                    logger.warning("Database entry missing 'url' field for %s, skipping", repo['repo_name'])
+                    logger.warning(
+                        "Database entry missing 'url' field for %s, skipping",
+                        repo["repo_name"],
+                    )
                     continue
                 repos_db.append(
                     {
@@ -560,7 +627,7 @@ def search_top_matching_repos(max_repos: int, lang: str) -> List[Dict[str, Any]]
 
     Returns:
         List[Dict[str, Any]]: A list of dictionaries containing each repo's DB info.
-    
+
     Raises:
         CodeQLConfigError: If GitHub API returns 4xx (invalid token, permissions, etc.).
         CodeQLError: If GitHub API returns 5xx or other errors.
@@ -584,7 +651,9 @@ def search_top_matching_repos(max_repos: int, lang: str) -> List[Dict[str, Any]]
     return repos_db[:max_repos]
 
 
-def download_and_extract_db(repo: Dict[str, Any], threads: int, extract_folder: str, lang: str = "c") -> None:
+def download_and_extract_db(
+    repo: Dict[str, Any], threads: int, extract_folder: str, lang: str = "c"
+) -> None:
     """
     Handle the download and extraction of a single repository's CodeQL DB.
 
@@ -593,7 +662,7 @@ def download_and_extract_db(repo: Dict[str, Any], threads: int, extract_folder: 
         threads (int): Number of threads for multi-threaded download.
         extract_folder (str): Where to extract the DB files.
         lang: Programming language code. Defaults to "c".
-    
+
     Raises:
         CodeQLError: If download, extraction, or folder rename fails.
         CodeQLConfigError: On 4xx client errors during download (e.g., invalid token).
@@ -609,12 +678,12 @@ def download_and_extract_db(repo: Dict[str, Any], threads: int, extract_folder: 
     # Rename the extracted folder if needed (with retry for Windows file locking)
     source_path = None
     target_path = os.path.join(db_path, repo_name)
-    
+
     if os.path.exists(os.path.join(db_path, "codeql_db")):
         source_path = os.path.join(db_path, "codeql_db")
     elif os.path.exists(os.path.join(db_path, lang)):
         source_path = os.path.join(db_path, lang)
-    
+
     if source_path and not os.path.exists(target_path):
         # Retry rename with delays (Windows may lock files temporarily)
         for attempt in range(3):
@@ -631,7 +700,10 @@ def download_and_extract_db(repo: Dict[str, Any], threads: int, extract_folder: 
                     )
                     raise CodeQLError(error_msg) from e
 
-def download_db_by_name(repo_name: str, lang: str, threads: int, local_source_dir: str = None) -> None:
+
+def download_db_by_name(
+    repo_name: str, lang: str, threads: int, local_source_dir: str = None
+) -> None:
     """
     Download the CodeQL database for a single repository.
 
@@ -644,7 +716,7 @@ def download_db_by_name(repo_name: str, lang: str, threads: int, local_source_di
             The expected structure is: local_source_dir/org/repo (matching repo_name).
 
     Raises:
-        CodeQLConfigError: If GitHub API returns 4xx (invalid token, permissions, etc.) 
+        CodeQLConfigError: If GitHub API returns 4xx (invalid token, permissions, etc.)
             during database lookup or download.
         CodeQLError: If GitHub API returns 5xx, download fails, or other errors occur.
 
@@ -656,14 +728,20 @@ def download_db_by_name(repo_name: str, lang: str, threads: int, local_source_di
     repo = {"stars": 0, "forks": 0, "repo_name": repo_name, "html_url": ""}
     try:
         repo_db = filter_repos_by_db_and_lang([repo], lang)
-        download_and_extract_db(repo_db[0], threads, os.path.join("output/databases", lang))
+        download_and_extract_db(
+            repo_db[0], threads, os.path.join("output/databases", lang)
+        )
 
-    except (CodeQLConfigError, CodeQLError, IndexError)):
-        logger.info("Error fetching the remote database, attempting to build it locally")
+    except (CodeQLConfigError, CodeQLError, IndexError):
+        logger.info(
+            "Error fetching the remote database, attempting to build it locally"
+        )
 
         # Fallback 1: Fallback to cloning and generating the database locally
         if local_source_dir is None:
-            logger.info(f"Attempting to create CodeQL DB locally for {repo_name} (via clone)")
+            logger.info(
+                f"Attempting to create CodeQL DB locally for {repo_name} (via clone)"
+            )
             # Define paths
             _, name = repo_name.split("/")
             source_dir = os.path.join("output", "sources", lang, name)
@@ -676,12 +754,15 @@ def download_db_by_name(repo_name: str, lang: str, threads: int, local_source_di
             # Clone
             clone_repo(repo_name, source_dir)
 
-
         # Fallback 2: Local source directory provided, only generate the database locally
         else:
-            logger.info(f"Checking for local source in {local_source_dir} for {repo_name}")
+            logger.info(
+                f"Checking for local source in {local_source_dir} for {repo_name}"
+            )
             org, name = repo_name.split("/")
-            db_dir = os.path.join(os.getcwd(), "output", "databases", lang, name, "codeql_db")
+            db_dir = os.path.join(
+                os.getcwd(), "output", "databases", lang, name, "codeql_db"
+            )
             os.makedirs(db_dir, exist_ok=True)
 
         # Create DB if none already exists
@@ -690,7 +771,9 @@ def download_db_by_name(repo_name: str, lang: str, threads: int, local_source_di
                 create_database(source_root=local_source_dir, db_path=db_dir, lang=lang)
                 return
             except Exception as e:
-                logger.error("Failed to create local CodeQL DB for %s: %s", repo_name, e)
+                logger.error(
+                    "Failed to create local CodeQL DB for %s: %s", repo_name, e
+                )
                 return
         else:
             logger.info(f"CodeQL DB locally for {repo_name} already exists in {db_dir}")
@@ -702,7 +785,7 @@ def fetch_codeql_dbs(
     threads: int = 4,
     single_repo: str = None,
     backup_file: str = "repos_db.json",
-    local_source_dir: str = None
+    local_source_dir: str = None,
 ) -> None:
     """
     Fetch and download CodeQL databases for GitHub repositories.
@@ -729,7 +812,9 @@ def fetch_codeql_dbs(
     try:
         os.makedirs(db_folder, exist_ok=True)
     except PermissionError as e:
-        raise CodeQLError(f"Permission denied creating database directory: {db_folder}") from e
+        raise CodeQLError(
+            f"Permission denied creating database directory: {db_folder}"
+        ) from e
     except OSError as e:
         raise CodeQLError(f"OS error creating database directory: {db_folder}") from e
 
@@ -737,7 +822,9 @@ def fetch_codeql_dbs(
     try:
         os.makedirs(zip_folder, exist_ok=True)
     except PermissionError as e:
-        raise CodeQLError(f"Permission denied creating ZIP directory: {zip_folder}") from e
+        raise CodeQLError(
+            f"Permission denied creating ZIP directory: {zip_folder}"
+        ) from e
     except OSError as e:
         raise CodeQLError(f"OS error creating ZIP directory: {zip_folder}") from e
 
@@ -752,18 +839,22 @@ def fetch_codeql_dbs(
     write_file_text(backup_file, json.dumps(repos_db))
 
     for i, repo_info in enumerate(repos_db):
-        logger.info("Downloading repo %d/%d: %s", i + 1, len(repos_db), repo_info['repo_name'])
+        logger.info(
+            "Downloading repo %d/%d: %s", i + 1, len(repos_db), repo_info["repo_name"]
+        )
         download_and_extract_db(repo_info, threads, db_folder)
 
         # Update the backup file in case of error or partial completion
-        remaining = repos_db[i + 1 :]
+        remaining = repos_db[i + 1:]
         write_file_text(backup_file, json.dumps(remaining))
 
     if os.path.exists(backup_file):
         try:
             os.unlink(backup_file)
         except PermissionError as e:
-            logger.warning("Permission denied deleting backup file %s: %s", backup_file, e)
+            logger.warning(
+                "Permission denied deleting backup file %s: %s", backup_file, e
+            )
         except OSError as e:
             logger.warning("OS error deleting backup file %s: %s", backup_file, e)
 
@@ -779,13 +870,14 @@ def main_cli() -> None:
         "repo",
         nargs="?",
         help="Optional GitHub repository name (e.g., 'redis/redis'). If not provided, fetches top 100 repos of the language.",
-        default=None
+        default=None,
     )
     parser.add_argument(
-        "-l", "--language",
+        "-l",
+        "--language",
         help="Programming language to analyze (default: c).",
         default="c",
-        choices=SUPPORTED_LANGUAGES
+        choices=SUPPORTED_LANGUAGES,
     )
 
     args = parser.parse_args()
@@ -803,6 +895,7 @@ def main_cli() -> None:
         sys.exit(1)
     else:
         fetch_codeql_dbs(lang=lang, threads=4, single_repo=repo)
+
 
 if __name__ == "__main__":
     main_cli()
