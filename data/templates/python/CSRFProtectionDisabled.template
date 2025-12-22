@@ -1,0 +1,8 @@
+This analysis detects disabled CSRF protection.
+1. Is `@csrf_exempt` or similar decorator used on a view?
+2. Does the view modify state (POST/PUT/DELETE)?
+3. Is there an alternative CSRF protection mechanism (e.g., custom token)?
+4. Is the endpoint an API intended for external clients (where tokens/OAuth might be used instead)?
+Use the tools to check the view and its HTTP methods.
+If the view is read-only or uses another auth/CSRF mechanism, it is likely safe.
+Only if a state-changing view has CSRF protection disabled without alternatives is it a vulnerability!

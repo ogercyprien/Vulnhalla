@@ -1,0 +1,8 @@
+This analysis detects Insecure Temporary File creation.
+1. Is `mktemp` used (deprecated and unsafe)?
+2. Is `tempfile.mktemp()` used?
+3. Is there a race condition between file name generation and creation?
+4. Are safe alternatives like `tempfile.mkstemp()`, `NamedTemporaryFile`, or `TemporaryDirectory` used?
+Use the tools to check the temp file function.
+If `mkstemp` or higher-level safe wrappers are used, it is safe.
+Only if `mktemp` is used is it a vulnerability (race condition)!

@@ -1,0 +1,8 @@
+This analysis detects unsafe PAM Authorization.
+1. Is `pam` module used?
+2. Is `authenticate()` called without creating a session?
+3. Is `acct_mgmt()` called? (It is required for correct PAM authorization)
+4. Is the return code checked properly?
+Use the tools to check the PAM call sequence.
+If `acct_mgmt` is called after `authenticate`, it is likely safe.
+Only if `authenticate` is used alone (skipping account validity checks) is it a vulnerability!

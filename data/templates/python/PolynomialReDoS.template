@@ -1,0 +1,9 @@
+This analysis detects potential Polynomial Regular Expression Denial of Service (ReDoS).
+1. Analyze the regular expression structure. Does it contain nested quantifiers (e.g., `(a+)+`)?
+2. Does it contain overlapping alternations with repetitions (e.g., `(a|a)+`)?
+3. Is the input string user-controlled?
+4. Is there a length limit on the input string before matching?
+5. Is the regex engine robust (e.g., `re` module in Python is vulnerable to ReDoS)?
+Use the tools to examine the regex and input source.
+If the input length is strictly limited or the regex is simple/linear, it is likely safe.
+Only if a complex regex is used on unbounded user input is it a vulnerability!

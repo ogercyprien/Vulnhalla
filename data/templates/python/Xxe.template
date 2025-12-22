@@ -1,0 +1,9 @@
+This analysis detects potential XML External Entity (XXE) vulnerabilities.
+1. Is the XML data being parsed coming from an untrusted source?
+2. Is the XML parser configured to disable DTDs (Document Type Definitions) and external entities?
+3. What library is being used (lxml, xml.etree.ElementTree, defusedxml)?
+4. If using `lxml`, are `resolve_entities=False` and `no_network=True` set?
+5. If using `defusedxml`, it is generally safe.
+Use the tools to check the parser configuration.
+If external entities are disabled or a safe library like `defusedxml` is used, it is likely safe.
+Only if untrusted XML is parsed with external entities enabled is it a vulnerability!

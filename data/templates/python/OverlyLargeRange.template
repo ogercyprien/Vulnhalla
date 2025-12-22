@@ -1,0 +1,9 @@
+This analysis detects Overly Large Ranges (DoS risk).
+1. Is `range()` or `xrange()` called with a user-controlled value?
+2. Is the value capped or validated?
+3. Is the result of the range used in a memory-intensive way (e.g., `list(range(...))`)?
+4. Is it just an iterator (Python 3 range) or a list (Python 2 range)?
+5. Can an attacker trigger a MemoryError or significant CPU consumption?
+Use the tools to trace the input to the range function.
+If the input is small or capped, it is safe.
+Only if an attacker can induce a massive allocation or loop count is it a vulnerability!

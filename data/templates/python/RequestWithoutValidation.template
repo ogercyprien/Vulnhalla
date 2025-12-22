@@ -1,0 +1,7 @@
+This analysis detects Requests without Validation.
+1. Is an HTTP request (urllib, requests) made?
+2. Is SSL verification disabled (`verify=False`)?
+3. Is the URL user-controlled?
+Use the tools to check the request parameters.
+If SSL verification is enabled (default), it is safe.
+Only if verification is disabled or the URL is untrusted (SSRF) is it a vulnerability!

@@ -1,0 +1,9 @@
+This analysis detects potential TarSlip (ZipSlip) vulnerabilities.
+1. Is the archive (tar/zip) being extracted coming from an untrusted source?
+2. Does the code validate the destination path of each extracted member?
+3. Is `os.path.commonprefix` or similar logic used to ensure the extracted file lies within the target directory?
+4. Is the code using `tarfile.extractall` without a `filter='data'` argument (Python 3.12+ safe default)?
+5. Can an attacker write files outside the intended directory via ".." in filenames?
+Use the tools to check the extraction loop and path validation.
+If the paths are validated or a safe extraction filter is used, it is likely safe.
+Only if files are extracted without checking for directory traversal is it a vulnerability!

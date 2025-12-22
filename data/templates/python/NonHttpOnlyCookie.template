@@ -1,0 +1,8 @@
+This analysis detects Non-HTTPOnly Cookie.
+1. Is a sensitive cookie (session ID, auth token) being set?
+2. Is `httponly=False` explicitly set?
+3. Is `httponly` missing (defaults often False in standard library, True in frameworks)?
+4. Does client-side JavaScript *need* to access this cookie?
+Use the tools to check the cookie attributes.
+If the cookie is not sensitive or JS access is required and safe, it is a false positive.
+Only if session cookies are accessible to JS (XSS risk) is it a vulnerability!

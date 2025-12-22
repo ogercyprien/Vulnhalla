@@ -1,0 +1,8 @@
+This analysis detects Unsafe Shell Command Construction.
+1. Is a command string built using user-controlled input?
+2. Is `shell=True` used in `subprocess`?
+3. Is `os.system` or `os.popen` used?
+4. Is the input quoted using `shlex.quote()`?
+Use the tools to check the command construction.
+If arguments are passed as a list or input is quoted, it is safe.
+Only if untrusted strings are concatenated into a shell command is it a vulnerability!

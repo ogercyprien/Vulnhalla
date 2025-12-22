@@ -1,0 +1,9 @@
+This analysis detects potential LDAP Injection vulnerabilities.
+1. Is the LDAP query constructed using user-controlled input?
+2. Is the user input properly sanitized or escaped before being included in the query?
+3. What library is used for LDAP operations? Does it provide parameterized queries?
+4. Can an attacker modify the structure of the LDAP filter (e.g., introducing new conditions)?
+5. Is the input validated against an allowlist?
+Use the tools to trace the data flow to the LDAP query execution.
+If the input is properly escaped (e.g., using `ldap.filter.escape_filter_chars`) or parameterized, it is likely safe.
+Only if untrusted input is directly concatenated into the LDAP filter string is it a vulnerability!

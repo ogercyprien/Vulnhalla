@@ -1,0 +1,8 @@
+This analysis detects XPath Injection.
+1. Is an XPath query constructed using user-controlled input?
+2. Is string concatenation used?
+3. Are parameters used instead?
+4. Is the XML structure predictable?
+Use the tools to trace the XPath query construction.
+If the query structure is static or input is sanitized, it is safe.
+Only if untrusted input can modify the XPath logic is it a vulnerability!

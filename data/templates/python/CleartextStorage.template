@@ -1,0 +1,8 @@
+This analysis detects Cleartext Storage of Sensitive Information.
+1. What data is being stored (password, API key, credit card)?
+2. Where is it being stored (local file, database, cookie)?
+3. Is it encrypted or hashed before storage?
+4. Is this a test or mock environment?
+Use the tools to trace the data to the storage function.
+If the data is not sensitive or is encrypted, it is safe.
+Only if credentials or PII are stored in cleartext is it a vulnerability!

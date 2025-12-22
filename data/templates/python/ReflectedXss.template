@@ -1,0 +1,9 @@
+This analysis detects potential Reflected Cross-Site Scripting (XSS).
+1. Is the data being reflected back to the user coming from an HTTP request or other untrusted source?
+2. Is the data sanitized or escaped before being included in the response (e.g., HTML escaping)?
+3. What context is the data being output to (HTML body, attribute, JavaScript, etc.)?
+4. Does the framework provide automatic escaping (like Jinja2 with autoescape=True)? Is it enabled?
+5. Is the Content-Type header set to text/html?
+Use the tools to trace the data flow and check for escaping mechanisms.
+If the data is properly escaped for the output context, it is likely safe.
+Only if untrusted data is output directly to the browser without escaping is it a vulnerability!

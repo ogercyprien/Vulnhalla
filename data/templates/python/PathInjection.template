@@ -1,0 +1,9 @@
+This analysis detects potential Path Injection (Path Traversal) vulnerabilities.
+1. Is the file path being accessed constructed using user-controlled input?
+2. Is there validation to ensure the path remains within the intended directory (e.g., checking for ".." or absolute paths)?
+3. Is the user input sanitized to remove directory traversal characters?
+4. Is the path normalized (e.g., using `os.path.abspath` or `os.path.realpath`) before validation?
+5. Can an attacker read or write arbitrary files on the system?
+Use the tools to trace the path construction and validation logic.
+If the path is validated against an allowlist or strictly confined to a safe directory, it is likely safe.
+Only if user input allows traversing outside the intended directory is it a vulnerability!

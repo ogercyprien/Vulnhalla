@@ -1,0 +1,9 @@
+This analysis detects XML Bomb (Billion Laughs Attack).
+1. Is XML being parsed?
+2. Are DTDs disabled?
+3. Is `lxml` or `xml.etree` used?
+4. Is `defusedxml` used?
+5. Can an attacker supply a malicious XML payload?
+Use the tools to check the XML parser settings.
+If DTDs are forbidden or `defusedxml` is used, it is safe.
+Only if insecure parsers process untrusted XML is it a vulnerability!

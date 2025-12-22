@@ -1,0 +1,9 @@
+This analysis detects Incomplete Hostname Regular Expressions.
+1. Does the regex use unescaped dots `.` when matching hostnames (e.g., `example.com` instead of `example\.com`)?
+2. Can `example.com` match `exampleXcom`?
+3. Is the regex anchored (`^` and `$`)?
+4. Is the regex used for security validation (e.g., allowlist check)?
+5. Can an attacker register a domain that bypasses this check (e.g., `evil.com` matching `evilXcom`)?
+Use the tools to check the regex pattern.
+If the dot is intended to be a wildcard or the risk is negligible, it is likely safe.
+Only if unescaped dots allow bypassing security checks is it a vulnerability!

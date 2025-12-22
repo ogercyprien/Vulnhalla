@@ -1,0 +1,8 @@
+This analysis detects Insecure Cookie configuration.
+1. Are `Secure`, `HttpOnly`, and `SameSite` flags set on the cookie?
+2. Is the cookie sensitive (session ID, auth token)?
+3. Is `Secure=False` or `HttpOnly=False` explicitly set?
+4. Is the application served over HTTPS?
+Use the tools to check the cookie attributes.
+If the cookie is non-sensitive (e.g., UI preference), missing flags are less critical.
+Only if session cookies are missing Secure/HttpOnly flags is it a vulnerability!

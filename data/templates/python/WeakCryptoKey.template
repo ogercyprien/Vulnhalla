@@ -1,0 +1,8 @@
+This analysis detects Weak Crypto Keys.
+1. Is a cryptographic key being generated?
+2. Is the key length sufficient (e.g., RSA < 2048, AES < 128)?
+3. Is `os.urandom` or `secrets` module used for key generation?
+4. Is a hardcoded value used as a key?
+Use the tools to check the key generation parameters.
+If standard key sizes and secure RNGs are used, it is safe.
+Only if short keys or predictable values are used is it a vulnerability!

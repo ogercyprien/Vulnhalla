@@ -1,0 +1,8 @@
+This analysis detects Regex Injection.
+1. Is a regex built using user-controlled input?
+2. Is the input escaped (`re.escape()`)?
+3. Can an attacker modify the regex structure (e.g., insert group operators)?
+4. Is this intentional (e.g., a regex tester app)?
+Use the tools to trace the regex construction.
+If the input is escaped, it is safe.
+Only if untrusted input changes the regex logic is it a vulnerability!

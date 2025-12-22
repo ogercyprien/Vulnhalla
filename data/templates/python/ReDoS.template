@@ -1,0 +1,8 @@
+This analysis detects ReDoS (Regular Expression Denial of Service).
+1. Analyze the regex pattern. Does it have overlapping repetitions?
+2. Is the input string user-controlled?
+3. Is there a length limit on the input?
+4. Is the regex used in a loop?
+Use the tools to inspect the regex and input.
+If the regex is safe or the input is short, it is safe.
+Only if a vulnerable regex matches unbounded user input is it a vulnerability!

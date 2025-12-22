@@ -1,0 +1,8 @@
+This analysis detects Server-Side Template Injection (SSTI).
+1. Is a template rendered from a string (not a file)?
+2. Is user-controlled input concatenated into the template string before rendering?
+3. Is `jinja2.Template(user_input)` used?
+4. Can an attacker inject template syntax (e.g., `{{ 7*7 }}`)?
+Use the tools to trace the template source.
+If user input is passed as context variables, it is safe.
+Only if user input is concatenated into the template string itself is it a vulnerability!

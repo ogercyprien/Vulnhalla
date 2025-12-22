@@ -1,0 +1,9 @@
+This analysis detects Weak File Permissions.
+1. Is `os.chmod` used?
+2. Are permissions set to `0o777` (world-writable)?
+3. Is `umask` used correctly?
+4. Is the file sensitive (config, key, executable)?
+5. Is this a temporary file that should be private?
+Use the tools to check the permission bits.
+If permissions are restrictive (e.g., `0o600` for keys), it is safe.
+Only if sensitive files are made world-readable/writable is it a vulnerability!

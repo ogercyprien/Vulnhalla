@@ -1,0 +1,9 @@
+This analysis detects potential Command Injection vulnerabilities.
+1. Is the command being executed constructed using user-controlled input?
+2. Trace the input source. Is it from an untrusted source (e.g., HTTP request, user input)?
+3. Is the input properly sanitized or validated before being used in the command?
+4. Is the command executed using a shell (shell=True in subprocess) or a function that invokes a shell?
+5. Are arguments properly quoted or passed as a list to avoid shell interpretation?
+Use the tools to check the data flow and the execution context.
+If the input is validated or passed as a separate argument to a non-shell execution, it is likely safe.
+Only if user input is directly concatenated into a shell command string is it a vulnerability!

@@ -1,0 +1,9 @@
+This analysis detects potential URL Redirection (Open Redirect) vulnerabilities.
+1. Is the redirection target constructed using user-controlled input?
+2. Is the target URL validated against an allowlist of allowed domains or paths?
+3. Is the user input validated to ensure it starts with a safe prefix (e.g., `/` for relative paths, but be careful of `//` or `/\`)?
+4. Can an attacker redirect the user to an arbitrary external site?
+5. Is the validation robust against bypasses (e.g., `@` characters, encoded characters)?
+Use the tools to trace the redirect target construction and validation.
+If the URL is strictly validated against an allowlist or forced to be a relative path, it is likely safe.
+Only if untrusted input determines the redirect target without adequate validation is it a vulnerability!

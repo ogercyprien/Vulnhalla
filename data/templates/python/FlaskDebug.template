@@ -1,0 +1,8 @@
+This analysis detects Flask Debug Mode enabled.
+1. Is `debug=True` passed to `app.run()`?
+2. Is this inside a `if __name__ == '__main__':` block?
+3. Is `app.run()` meant for production use? (Flask docs say no)
+4. Is debug mode explicitly disabled via environment variables in production?
+Use the tools to check the context of `app.run()`.
+If it's in a development block or strictly for local testing, it is less critical but still a bad practice to commit.
+Only if debug mode is enabled in a production entry point is it a high-severity vulnerability!

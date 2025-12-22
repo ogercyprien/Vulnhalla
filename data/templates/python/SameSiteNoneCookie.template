@@ -1,0 +1,8 @@
+This analysis detects SameSite=None Cookie configuration.
+1. Is `SameSite='None'` explicitly set?
+2. Is `Secure=True` also set? (Required for SameSite=None)
+3. Is this intended for cross-site usage (e.g., embedded iframe)?
+4. Is it a sensitive cookie?
+Use the tools to check the cookie attributes.
+If `Secure` is present and cross-site access is needed, it is safe.
+Only if `SameSite=None` is set without `Secure` or for sensitive cookies without need is it a vulnerability!

@@ -1,0 +1,9 @@
+This analysis detects Cleartext Logging of Sensitive Information.
+1. What information is being logged (password, token, credit card, PII)?
+2. Is the variable name misleading (e.g., "password" variable actually holding a hash)?
+3. Is the data masked, redacted, or hashed before logging?
+4. Is this a debug log that is disabled in production?
+5. Is the data actually sensitive in this context?
+Use the tools to inspect the content of the logged variable.
+If the data is not sensitive or is properly masked, it is a false positive.
+Only if actual sensitive data is written to logs in cleartext is it a vulnerability!

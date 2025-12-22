@@ -1,0 +1,8 @@
+This analysis detects Jinja2 templates without Auto-Escaping.
+1. Is the Jinja2 environment configured with `autoescape=False` or `autoescape=None`?
+2. Are user-controlled variables rendered in the template?
+3. Is `|safe` filter used on untrusted data?
+4. Is the output HTML?
+Use the tools to check the Jinja2 environment configuration.
+If `autoescape=True` (default in Flask) or the content type is not HTML, it is likely safe.
+Only if auto-escaping is disabled for HTML output with untrusted data is it a vulnerability!

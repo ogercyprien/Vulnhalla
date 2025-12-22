@@ -1,0 +1,9 @@
+This analysis detects potential SQL injection vulnerabilities.
+1. Is the data entering the SQL query user-controlled? Trace the data flow back to its source.
+2. Is the user input properly sanitized or parameterized before being used in the query?
+3. If string formatting or concatenation is used, is it safe? (e.g., using a library that handles escaping)
+4. Is the query structure modified by user input in a way that allows injection?
+5. Can the user input manipulate the SQL logic? (yes/no)
+Use the tools to trace the variable back to its definition.
+If the input is properly parameterized or validated against an allowlist, it is likely safe.
+Only if user input is directly concatenated or formatted into the query without sanitization is it a vulnerability!

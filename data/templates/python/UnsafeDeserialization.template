@@ -1,0 +1,9 @@
+This analysis detects unsafe deserialization of user-controlled data.
+1. Is the data being deserialized coming from an untrusted source?
+2. What library is used for deserialization (pickle, yaml, marshal, etc.)?
+3. If using `yaml`, is `SafeLoader` or `safe_load` used?
+4. If using `pickle`, is there any cryptographic signature validation of the data before deserialization?
+5. Can an attacker control the content of the serialized object?
+Use the tools to identify the deserialization method and the source of the data.
+If `yaml.safe_load` is used, it is generally safe. `pickle` on untrusted data is almost always unsafe.
+Only if untrusted data is deserialized using an unsafe method is it a vulnerability!

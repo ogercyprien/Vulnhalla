@@ -1,0 +1,9 @@
+This analysis detects Incomplete URL Substring Sanitization.
+1. Is the code checking if a URL "contains" a safe domain (e.g., `if "example.com" in url`)?
+2. Can this check be bypassed (e.g., `evil-example.com` or `example.com.evil.com`)?
+3. Is the check used for security (e.g., preventing SSRF or Open Redirect)?
+4. proper parsing used instead (e.g., `urllib.parse.urlparse` and checking `netloc`)?
+5. Is there a comprehensive allowlist?
+Use the tools to check the validation logic.
+If proper URL parsing is used or the check is robust, it is likely safe.
+Only if a simple substring check is used for security validation is it a vulnerability!

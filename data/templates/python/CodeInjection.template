@@ -1,0 +1,9 @@
+This analysis detects potential Code Injection vulnerabilities.
+1. Is the code being executed constructed using user-controlled input?
+2. What function is used to execute the code (eval, exec, compile, etc.)?
+3. Is the input properly validated or sanitized to ensure it contains only expected values?
+4. Can an attacker inject arbitrary Python code?
+5. Is the input limited to a safe subset of the language (e.g., using `ast.literal_eval` instead of `eval`)?
+Use the tools to trace the input to the execution function.
+If the input is strictly validated or `ast.literal_eval` is used for data parsing, it is likely safe.
+Only if untrusted input is passed to `eval`, `exec`, or similar functions allows arbitrary code execution!

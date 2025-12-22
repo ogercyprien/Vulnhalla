@@ -1,0 +1,8 @@
+This analysis detects Weak Sensitive Data Hashing.
+1. Is a hashing function used on sensitive data (passwords)?
+2. Is it a general-purpose hash (MD5, SHA1, SHA256)?
+3. Is it a password hash (Argon2, bcrypt, scrypt, PBKDF2)?
+4. Is a salt used?
+Use the tools to check the hashing algorithm.
+If a strong password hash (bcrypt, argon2) is used, it is safe.
+Only if a fast hash (MD5/SHA) is used for passwords (even with salt) is it a vulnerability!

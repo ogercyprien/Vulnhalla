@@ -1,0 +1,9 @@
+This analysis detects usage of Insecure SSL/TLS Protocols.
+1. What protocol version is being specified (SSLv2, SSLv3, TLSv1.0, TLSv1.1)?
+2. Is this configuration used for a client or a server?
+3. Is `ssl.PROTOCOL_TLS` (auto-negotiate) used with proper minimum version flags?
+4. Is the context verifying certificates (`cert_reqs=ssl.CERT_REQUIRED`)?
+5. Is this legacy code connecting to a legacy system that requires old protocols?
+Use the tools to check the SSL context configuration.
+If modern TLS (1.2+) is enforced or defaults are safe, it is likely safe.
+Only if weak protocols (SSLv2/3, TLS 1.0/1.1) are explicitly enabled is it a vulnerability!

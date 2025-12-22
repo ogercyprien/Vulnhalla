@@ -1,0 +1,8 @@
+This analysis detects Bad Tag Filter usage.
+1. Is the filter attempting to remove dangerous HTML tags (e.g., <script>)?
+2. Is it a blocklist approach (listing bad tags)? Blocklists are easily bypassed.
+3. Is the input parsed correctly before filtering?
+4. Can an attacker obfuscate tags (e.g., `<SCR IPT>`) to bypass the filter?
+Use the tools to inspect the filtering logic.
+If it's a blocklist-based filter on raw strings, it is likely vulnerable.
+Only if it's a robust allowlist-based sanitizer (like Bleach) is it safe.

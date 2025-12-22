@@ -1,0 +1,8 @@
+This analysis detects Cookie Injection.
+1. Is a cookie value being set using user-controlled input?
+2. Is the input validated or sanitized to prevent injecting attributes (e.g., `; Secure; HttpOnly`)?
+3. Can an attacker overwrite critical cookie flags?
+4. Is the framework's secure cookie setting function used?
+Use the tools to trace the cookie setting logic.
+If the input is validated or the framework handles cookie serialization safely, it is likely safe.
+Only if raw string concatenation is used to build Set-Cookie headers is it a vulnerability!

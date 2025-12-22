@@ -1,0 +1,9 @@
+This analysis detects potential Log Injection (Log Forging) vulnerabilities.
+1. Is the log message constructed using user-controlled input?
+2. Is the input sanitized to remove newline characters (`\n`, `\r`)?
+3. Can an attacker inject new log entries by inserting newlines?
+4. Is the logging library configured to handle newlines safely?
+5. Is the input validated?
+Use the tools to trace the data flow to the logging call.
+If the input is sanitized or the logger escapes newlines, it is likely safe.
+Only if untrusted input containing newlines is written directly to logs is it a vulnerability!

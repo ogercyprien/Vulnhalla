@@ -1,0 +1,8 @@
+This analysis detects binding to all network interfaces.
+1. Is the application binding to `0.0.0.0` or `::`?
+2. Is this intended for a production server that needs to be publicly accessible?
+3. Is it a development server or internal service that should be bound to `127.0.0.1`?
+4. Are there firewall rules (security groups) restricting access to this port?
+Use the tools to check the bind address configuration.
+If it's a public service, binding to all interfaces is normal.
+Only if a sensitive internal service is inadvertently exposed is it a vulnerability!

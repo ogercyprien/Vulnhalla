@@ -1,0 +1,8 @@
+This analysis detects Stack Trace Exposure.
+1. Is an exception being caught?
+2. Is the stack trace printed to the HTTP response or log?
+3. Is `debug=True` enabled in production?
+4. Can an attacker trigger an error to see the trace?
+Use the tools to check the exception handling.
+If the trace is logged internally, it is safe.
+Only if the stack trace is revealed to the user in production is it a vulnerability!

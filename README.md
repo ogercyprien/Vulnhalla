@@ -373,6 +373,16 @@ CodeQL queries are organized in `data/queries/<LANG>/`:
 
 Each directory contains a `qlpack.yml` file defining the CodeQL pack.
 
+### Maintaining Python Queries
+
+To update the Python security queries with the latest rules from the official CodeQL repository:
+
+```bash
+python scripts/fetch_python_queries.py
+```
+
+This script fetches security queries from `github/codeql` and updates `data/queries/python/issues/`.
+
 ---
 
 ## 📄 License

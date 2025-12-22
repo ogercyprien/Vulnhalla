@@ -1,0 +1,9 @@
+This analysis detects usage of Weak Cryptographic Algorithms.
+1. What cryptographic algorithm is being used (MD5, SHA1, DES, RC4, etc.)?
+2. What is the purpose of the hashing/encryption (password storage, data integrity, secure communication, non-security ID generation)?
+3. If MD5/SHA1 is used, is it for security purposes (like signatures) or non-security purposes (like file dedup, cache keys)?
+4. Is `usedforsecurity=False` passed to the hash constructor (if supported)?
+5. Is the algorithm considered weak for the specific use case?
+Use the tools to determine the algorithm and its application context.
+If weak algorithms are used for non-security purposes, it is likely safe.
+Only if weak algorithms are used for security-critical functions (passwords, signatures, encryption) is it a vulnerability!

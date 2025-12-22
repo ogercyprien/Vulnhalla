@@ -1,0 +1,8 @@
+This analysis detects Missing Host Key Validation in SSH connections.
+1. Is `paramiko` or similar SSH library used?
+2. Is `set_missing_host_key_policy(paramiko.AutoAddPolicy())` called?
+3. Is `verify=False` passed to SSH connect methods?
+4. Is this a development script or production code?
+Use the tools to check the SSH client configuration.
+If strict host key checking is enforced, it is safe.
+Only if `AutoAddPolicy` or equivalent is used in production (MITM risk) is it a vulnerability!

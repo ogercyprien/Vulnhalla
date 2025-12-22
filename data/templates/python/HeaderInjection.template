@@ -1,0 +1,9 @@
+This analysis detects potential HTTP Host Header Injection vulnerabilities.
+1. Is the application relying on the `Host` header to generate URLs (e.g., password reset links)?
+2. Is the `Host` header validated against a list of allowed domains?
+3. Can an attacker manipulate the `Host` header to poison caches or generate malicious links?
+4. Is the web server configuration (Nginx, Apache) set to overwrite the Host header with a static value?
+5. Is `X-Forwarded-Host` used without validation?
+Use the tools to check how the Host header is used and validated.
+If the Host header is validated or ignored in favor of a static configuration, it is likely safe.
+Only if the application blindly trusts the Host header for security-critical operations is it a vulnerability!
