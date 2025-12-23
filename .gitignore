@@ -24,6 +24,7 @@ codeql/
 output/databases/
 output/results/
 output/zip_dbs/
+output/sources/
 data/queries/**/*.qlx
 data/queries/**/.codeql/
 data/queries/**/codeql-pack.lock.yml
