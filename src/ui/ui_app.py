@@ -243,18 +243,18 @@ class VulnhallaUI(App):
         Update the issues table with current filtered issues.
 
         Args:
-            preserve_row_key (Optional[str]): Optional row key (issue ID) to preserve 
+            preserve_row_key (Optional[str]): Optional row key (issue.final_path) to preserve
                 cursor position after update.
         """
         table = self.query_one("#issues-table", DataTable)
         # Clear both rows and columns to prevent duplicates
         table.clear(columns=True)
         table.add_columns("ID", "LLM decision", "Manual decision", "Repo", "Issue name", "File")
-        
+
         for issue in self.filtered_issues:
             status_display = format_status_display(issue.status)
             manual_display = format_manual_decision(issue.manual_decision)
-            
+
             # Normalize file name display format
             file_display = issue.file
             if file_display.endswith('"') and not file_display.startswith('"'):
@@ -262,7 +262,7 @@ class VulnhallaUI(App):
             # Truncate if needed
             if len(file_display) > 30:
                 file_display = file_display[:30] + "..."
-            
+
             table.add_row(
                 issue.id,
                 status_display,
@@ -270,22 +270,22 @@ class VulnhallaUI(App):
                 issue.repo,
                 issue.name[:40] + "..." if len(issue.name) > 40 else issue.name,
                 file_display,
-                key=issue.id
+                key=issue.final_path
             )
-        
+
         # Restore cursor position if requested (immediately after adding all rows)
         if preserve_row_key is not None:
             # Find target row index and restore cursor
             for idx, issue in enumerate(self.filtered_issues):
-                if issue.id == preserve_row_key and idx > 0:
+                if issue.final_path == preserve_row_key and idx > 0:
                     # Move cursor from row 0 (after clear) to target row
                     for _ in range(idx):
                         table.action_cursor_down()
                     break
-        
+
         # Refresh the table to ensure visual update
         table.refresh()
-        
+
         # Update count with sort indicator
         count_widget = self.query_one("#issues-count", Static)
         sort_indicator = ""
@@ -550,9 +550,9 @@ class VulnhallaUI(App):
             if self.selected_issue:
                 # Update the manual_decision
                 self.selected_issue.manual_decision = event.value  # Could be None for "Not Set"
-                
+
                 # Update the table
-                self.update_issues_table(preserve_row_key=self.selected_issue.id)
+                self.update_issues_table(preserve_row_key=self.selected_issue.final_path)
     
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """
